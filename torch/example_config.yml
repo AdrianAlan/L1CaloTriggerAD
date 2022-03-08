@@ -1,0 +1,21 @@
+---
+dataset:
+ train: /path/to/train
+ validation: /path/to/validation
+ test_background: /path/to/test
+ test_signal:
+  - name: 'signal_name_0'
+    path: /path/to/signal_0
+  - name: 'signal_name_1'
+    path: /path/to/signal_1
+
+model:
+ class_name: ClassName
+
+output:
+ models: models
+ name: file_name.pth
+ plots: ../plots
+
+misc:
+ plot_style: ../plots/physics.mplstyle
