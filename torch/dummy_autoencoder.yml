@@ -19,6 +19,7 @@ dataset:
 
 model:
  class_name: DummyAutoencoder
+ criterion: nn.MSELoss
 
 settings:
  standardize: True

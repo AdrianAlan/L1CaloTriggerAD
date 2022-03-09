@@ -11,6 +11,7 @@ dataset:
 
 model:
  class_name: ClassName
+ criterion: nn.MSELoss
 
 settings:
  standardize: False

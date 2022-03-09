@@ -49,6 +49,7 @@ def weights_init(m):
 
 
 def main(model_class,
+         criterion,
          source_train,
          source_val,
          save_path,
@@ -89,7 +90,7 @@ def main(model_class,
     )
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
-    criterion = nn.MSELoss().to(device)
+    criterion = eval(criterion)().to(device)
     scaler = GradScaler()
     net = torch.nn.DataParallel(model)
 
@@ -174,6 +175,7 @@ if __name__ == '__main__':
         os.mkdir(config['output']['models'])
 
     main(config['model']['class_name'],
+         config['model']['criterion'],
          config['dataset']['train'],
          config['dataset']['validation'],
          config['output']['models'],
