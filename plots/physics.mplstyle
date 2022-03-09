@@ -28,7 +28,7 @@ legend.fontsize: 9
 legend.frameon: False
 legend.handlelength: 1.5
 
-lines.linewidth: 1.
+lines.linewidth: 0.8
 lines.markersize: 2
 
 xtick.direction: in

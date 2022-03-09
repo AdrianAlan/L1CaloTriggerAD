@@ -1,6 +1,7 @@
 import argparse
 import torch
 import matplotlib.pyplot as plt
+import numpy as np
 import yaml
 
 from sklearn.metrics import roc_curve, auc
@@ -58,22 +59,40 @@ def main(model_class,
         y_true_signal = torch.empty(0).to(device)
         y_score_signal = torch.empty(0).to(device)
 
+        tprs, aucs = [], []
+        mean_fpr = np.linspace(0, 1, 1000)
+
         for X, y in benchmark:
             y = y.to(device)
             distance = metric(model(X), X).mean(3).mean(2).mean(1)
             y_true_signal = torch.cat((y_true_signal, y), 0)
             y_score_signal = torch.cat((y_score_signal, distance), 0)
 
-        fpr, tpr, _ = roc_curve(
-            to_numpy(torch.cat((y_true, y_true_signal))),
-            to_numpy(torch.cat((y_score, y_score_signal)))
+            fpr, tpr, _ = roc_curve(
+                to_numpy(torch.cat((y_true, y_true_signal))),
+                to_numpy(torch.cat((y_score, y_score_signal)))
+            )
+            tprs.append(np.interp(mean_fpr, fpr, tpr))
+            tprs[-1][0] = 0.0
+            roc_auc = auc(fpr, tpr)
+            aucs.append(roc_auc)
+
+        mean_tpr = np.mean(tprs, axis=0)
+        mean_tpr[-1] = 1.0
+        mean_auc = auc(mean_fpr, mean_tpr)
+        std_auc = np.std(aucs)
+        std_tpr = np.std(tprs, axis=0)
+        tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
+        tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
+
+        label = '[{0:.3f} r$\pm {1:.3f}$] {2}'.format(
+            mean_auc,
+            std_auc,
+            signal['name']
         )
 
-        roc_auc = auc(fpr, tpr)
-
-        label = '[{0:0.3f}] {1}'.format(roc_auc, signal['name'])
-
-        plt.plot(fpr, tpr, label=label)
+        plt.fill_between(mean_fpr, tprs_lower, tprs_upper, alpha=0.5)
+        plt.plot(mean_fpr, mean_tpr, label=label)
 
     plt.xlim([-0.05, 1.05])
     plt.ylim([-0.05, 1.05])
