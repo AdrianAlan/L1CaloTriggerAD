@@ -12,7 +12,7 @@ from models import DummyAutoencoder
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader
 from tqdm import trange
-from utils import AverageMeter, IsValidFile
+from utils import AverageMeter, IsValidFile, draw_loss
 
 
 def run_epoch(model,
@@ -40,6 +40,7 @@ def run_epoch(model,
             loss.update(batch_loss.item(), labels.size(0))
             tr.set_description('{0}: {1}'.format(prefix, loss))
             tr.update(1)
+    return loss
 
 
 def weights_init(m):
@@ -51,6 +52,7 @@ def main(model_class,
          source_train,
          source_val,
          save_path,
+         save_path_plots,
          save_name,
          batch_size,
          weight_decay,
@@ -90,27 +92,35 @@ def main(model_class,
     scaler = GradScaler()
     net = torch.nn.DataParallel(model)
 
+    tloss, vloss = [], []
     for epoch in range(epochs):
         print('Epoch {0}'.format(epoch + 1))
 
         model.train()
-        run_epoch(net,
-                  X_train,
-                  criterion,
-                  optimizer,
-                  scaler=scaler)
+        loss = run_epoch(net,
+                         X_train,
+                         criterion,
+                         optimizer,
+                         scaler=scaler)
+        tloss.append(loss.average)
 
         model.eval()
-        run_epoch(net,
-                  X_val,
-                  criterion,
-                  optimizer,
-                  backprop=False,
-                  prefix='Validation')
+        loss = run_epoch(net,
+                         X_val,
+                         criterion,
+                         optimizer,
+                         backprop=False,
+                         prefix='Validation')
+        vloss.append(loss.average)
 
         torch.save(
             model.state_dict(),
             '{0}/{1}.pth'.format(save_path, save_name)
+        )
+        draw_loss(
+            tloss,
+            vloss,
+            '{0}/Loss-{1}.png'.format(save_path_plots, save_name)
         )
         scheduler.step()
 
@@ -166,6 +176,7 @@ if __name__ == '__main__':
          config['dataset']['train'],
          config['dataset']['validation'],
          config['output']['models'],
+         config['output']['plots'],
          config['output']['name'],
          args.batch_size,
          args.weight_decay,

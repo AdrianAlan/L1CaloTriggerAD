@@ -1,4 +1,5 @@
 import argparse
+import matplotlib.pyplot as plt
 import os
 
 
@@ -45,6 +46,20 @@ class IsValidFile(argparse.Action):
                     '{0} is not a valid file'.format(prospective_file))
         else:
             setattr(namespace, self.dest, prospective_file)
+
+
+def draw_loss(tloss, vloss, save_path):
+    """Plots the training and validation loss"""
+    fig, ax = plt.subplots()
+    plt.style.use('../plots/physics.mplstyle')
+    plt.xlabel("Epoch", horizontalalignment='right', x=1.0)
+    plt.ylabel("Loss", horizontalalignment='right', y=1.0)
+    plt.yscale("log")
+    plt.plot(tloss, label='Training')
+    plt.plot(vloss, label='Validation')
+    plt.legend()
+    plt.savefig(save_path)
+    plt.close(fig)
 
 
 def to_numpy(t):
