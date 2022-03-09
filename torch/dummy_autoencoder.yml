@@ -21,9 +21,9 @@ model:
  class_name: DummyAutoencoder
 
 settings:
- standardize: False
- normalize: True
- flip_prob: 0.
+ standardize: True
+ normalize: False
+ flip_prob: .5
 
 output:
  models: models

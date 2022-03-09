@@ -33,13 +33,9 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
 
         if self.flip_prob:
             if torch.rand(1) < self.flip_prob:
-                calorimeter, labels = self.flip_image(calorimeter,
-                                                      labels,
-                                                      horizontal=True)
+                calorimeter = self.flip_image(calorimeter, horizontal=True)
             if torch.rand(1) < self.flip_prob:
-                calorimeter, labels = self.flip_image(calorimeter,
-                                                      labels,
-                                                      horizontal=False)
+                calorimeter = self.flip_image(calorimeter, horizontal=False)
 
         return calorimeter, labels
 
