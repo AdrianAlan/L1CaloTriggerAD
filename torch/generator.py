@@ -8,11 +8,13 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
                  source,
                  device,
                  flip_prob=0.,
+                 normalize=False,
                  standardize=True,
                  signal=False):
         """Generator for CMS Calorimeter Layer-1 Trigger with UCTRegions"""
         self.source = source
         self.device = device
+        self.normalize = normalize
         self.standardize = standardize
         self.flip_prob = flip_prob
         self.label = int(signal)
@@ -25,7 +27,9 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
         calorimeter = torch.unsqueeze(self.calo_regions[index], 0)
 
         if self.standardize:
-            calorimeter = self.rescale(calorimeter)
+            calorimeter = self._standardize(calorimeter)
+        elif self.normalize:
+            calorimeter = self._normalize(calorimeter)
 
         if self.flip_prob:
             if torch.rand(1) < self.flip_prob:
@@ -49,7 +53,11 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
         image = torch.flip(image, [axis])
         return image
 
-    def rescale(self, tensor):
+    def _normalize(self, tensor):
+        m = torch.max(tensor)
+        return tensor.div(m)
+
+    def _standardize(self, tensor):
         m = torch.mean(tensor)
         s = torch.std(tensor)
         return tensor.sub(m).div(s)

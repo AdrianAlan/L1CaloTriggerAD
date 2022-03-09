@@ -12,6 +12,11 @@ dataset:
 model:
  class_name: ClassName
 
+settings:
+ standardize: False
+ normalize: False
+ flip_prob: 0.
+
 output:
  models: models
  name: file_name.pth

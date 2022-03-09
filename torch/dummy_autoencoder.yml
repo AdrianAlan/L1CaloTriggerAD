@@ -20,6 +20,11 @@ dataset:
 model:
  class_name: DummyAutoencoder
 
+settings:
+ standardize: False
+ normalize: True
+ flip_prob: 0.
+
 output:
  models: models
  name: DummyAutoencoder

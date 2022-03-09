@@ -54,6 +54,7 @@ def main(model_class,
          save_path,
          save_path_plots,
          save_name,
+         settings,
          batch_size,
          weight_decay,
          epochs,
@@ -62,13 +63,13 @@ def main(model_class,
     device = torch.device('cuda:0')
 
     X_train = DataLoader(
-        L1UCTRegionsDataset(source_train, device),
+        L1UCTRegionsDataset(source_train, device, **settings),
         batch_size=batch_size,
         num_workers=0,
         shuffle=True)
 
     X_val = DataLoader(
-        L1UCTRegionsDataset(source_train, device),
+        L1UCTRegionsDataset(source_train, device, **settings),
         batch_size=batch_size,
         num_workers=0,
         shuffle=False)
@@ -178,6 +179,7 @@ if __name__ == '__main__':
          config['output']['models'],
          config['output']['plots'],
          config['output']['name'],
+         config['settings'],
          args.batch_size,
          args.weight_decay,
          args.epochs,
