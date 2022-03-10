@@ -31,8 +31,9 @@ def create_dataset(hdf5_dataset, name, data):
         dtype='i')
 
 
-def main(filepath, savepath, dataset_split, chunksize):
-    events = get_size(filepath)
+def main(filepath, savepath, dataset_split, chunksize, events):
+    if not events:
+        events = get_size(filepath)
     events_per_file = events*np.array(dataset_split)
     events_per_file = events_per_file.astype(int)
     chunks = pd.read_csv(filepath, chunksize=chunksize)
@@ -78,8 +79,18 @@ if __name__ == '__main__':
                         help='Chunksize for CSV reader',
                         type=int)
 
+    parser.add_argument('-e',
+                        default=None,
+                        dest='events',
+                        help='Number of events in the file',
+                        type=int)
+
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
     dataset_split = config['dataset_split']
 
-    main(args.filepath, args.savepath, dataset_split, args.chunksize)
+    main(args.filepath,
+         args.savepath,
+         dataset_split,
+         args.chunksize,
+         args.events)
