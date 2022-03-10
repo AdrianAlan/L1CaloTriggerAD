@@ -56,7 +56,10 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
     def _standardize(self, tensor):
         m = torch.mean(tensor)
         s = torch.std(tensor)
-        return tensor.sub(m).div(s)
+        if s:
+            return tensor.sub(m).div(s)
+        else:
+            return tensor
 
     def open_hdf5(self):
         self.hdf5_dataset = h5py.File(self.source, 'r')
