@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import trange
 from utils import IsValidFile, to_numpy
 
+
 def main(model_class,
          source_background,
          source_signals,
@@ -89,7 +90,7 @@ def main(model_class,
             tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
             tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
 
-            label = '[{0:.3f} r$\pm {1:.3f}$] {2}'.format(
+            label = r'[{0:.3f} $\pm {1:.3f}$] {2}'.format(
                 mean_auc,
                 std_auc,
                 signal['name']
