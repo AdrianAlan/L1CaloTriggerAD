@@ -1,0 +1,17 @@
+name: solaris
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - h5py
+  - jupyter 
+  - jupyter_core
+  - matplotlib
+  - pandas
+  - pytorch
+  - pyyaml
+  - scikit-learn
+  - torchaudio
+  - torchvision
+  - tqdm
+  - uproot
