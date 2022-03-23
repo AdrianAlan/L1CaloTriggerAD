@@ -23,3 +23,8 @@ class IsValidFile(argparse.Action):
                     '{0} is not a valid file'.format(prospective_file))
         else:
             setattr(namespace, self.dest, prospective_file)
+
+def absoluteFilePaths(directory):
+    for dirpath,_,filenames in os.walk(directory):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
