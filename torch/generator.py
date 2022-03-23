@@ -27,9 +27,11 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
         calorimeter = torch.unsqueeze(self.calo_regions[index], 0)
 
         if self.standardize:
-            calorimeter = self._standardize(calorimeter)
+            calorimeter = self._standardize(calorimeter,
+                                            self.standardize)
         elif self.normalize:
-            calorimeter = self._normalize(calorimeter)
+            calorimeter = self._normalize(calorimeter,
+                                          self.normalize)
 
         if self.flip_prob:
             if torch.rand(1) < self.flip_prob:
@@ -49,17 +51,16 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
         image = torch.flip(image, [axis])
         return image
 
-    def _normalize(self, tensor):
-        m = torch.max(tensor)
-        return tensor.div(m)
+    def _normalize(self, t, data):
+        m = torch.max(t) if isinstance(data, bool) else data
+        return t.div(m) if m else t
 
-    def _standardize(self, tensor):
-        m = torch.mean(tensor)
-        s = torch.std(tensor)
-        if s:
-            return tensor.sub(m).div(s)
+    def _standardize(self, t, data):
+        if isinstance(data, bool):
+            m, s = torch.mean(t), torch.std(t)
         else:
-            return tensor
+            m, s = data
+        return t.sub(m).div(s) if s else t
 
     def open_hdf5(self):
         self.hdf5_dataset = h5py.File(self.source, 'r')
