@@ -20,7 +20,7 @@ def main(model_class,
          model_name,
          plot_path,
          plot_style,
-         batch_size):
+         max_events):
 
     device = torch.device('cuda:0')
     plt.style.use(plot_style)
@@ -32,54 +32,80 @@ def main(model_class,
     # Chose your metric
     metric = torch.nn.MSELoss(reduction='none')
 
+    # Gather statistics and plot
+    y_trues, y_scores = [], []
+
     # Load the datasets: background
     background = DataLoader(
         L1UCTRegionsDataset(source_background, device),
-        batch_size=batch_size,
+        batch_size=1,
         num_workers=0,
         shuffle=False)
 
-    # Gather statistics and plot
+    samples_per_cv = min(len(background) / 10., max_events / 10.)
+    limits = samples_per_cv
     y_true, y_score = torch.empty(0).to(device), torch.empty(0).to(device)
 
-    for X, y in background:
-        y = y.to(device)
-        distance = metric(model(X), X).mean(3).mean(2).mean(1)
-        y_true = torch.cat((y_true, y), 0)
-        y_score = torch.cat((y_score, distance), 0)
+    with trange(int(10*samples_per_cv), file=sys.stdout) as tr:
+        tr.set_description('Testing background')
+
+        for i, (X, y) in enumerate(background):
+
+            if i >= limits:
+                y_trues.append(y_true)
+                y_true = torch.empty(0).to(device)
+                y_scores.append(y_score)
+                y_score = torch.empty(0).to(device)
+                limits += samples_per_cv
+
+            if i > 10*samples_per_cv:
+                break
+
+            y = y.to(device)
+            distance = metric(model(X), X).mean(3).mean(2).mean(1)
+            y_true = torch.cat((y_true, y), 0)
+            y_score = torch.cat((y_score, distance), 0)
+            tr.update(1)
 
     plt.figure()
 
     for signal in source_signals:
         benchmark = DataLoader(
             L1UCTRegionsDataset(signal['path'], device, signal=True),
-            batch_size=batch_size,
+            batch_size=1,
             num_workers=0,
             shuffle=False
         )
-
+        samples_per_cv = min(len(benchmark) / 10., max_events / 10.)
+        limits = samples_per_cv
         y_true_signal = torch.empty(0).to(device)
         y_score_signal = torch.empty(0).to(device)
-
+        cv = 0
         tprs, aucs = [], []
         mean_fpr = np.linspace(0, 1, 1000)
-        with trange(len(benchmark), file=sys.stdout) as tr:
+        with trange(int(10*samples_per_cv), file=sys.stdout) as tr:
             tr.set_description('Testing {0}'.format(signal['name']))
+            for i, (X, y) in enumerate(benchmark):
+                if i >= limits:
+                    fpr, tpr, _ = roc_curve(
+                        to_numpy(torch.cat((y_trues[cv], y_true_signal))),
+                        to_numpy(torch.cat((y_scores[cv], y_score_signal)))
+                    )
+                    tprs.append(np.interp(mean_fpr, fpr, tpr))
+                    tprs[-1][0] = 0.0
+                    roc_auc = auc(fpr, tpr)
+                    aucs.append(roc_auc)
+                    y_true_signal = torch.empty(0).to(device)
+                    y_score_signal = torch.empty(0).to(device)
+                    limits += samples_per_cv
 
-            for X, y in benchmark:
+                if i > 10*samples_per_cv:
+                    break
+
                 y = y.to(device)
                 distance = metric(model(X), X).mean(3).mean(2).mean(1)
                 y_true_signal = torch.cat((y_true_signal, y), 0)
                 y_score_signal = torch.cat((y_score_signal, distance), 0)
-
-                fpr, tpr, _ = roc_curve(
-                    to_numpy(torch.cat((y_true, y_true_signal))),
-                    to_numpy(torch.cat((y_score, y_score_signal)))
-                )
-                tprs.append(np.interp(mean_fpr, fpr, tpr))
-                tprs[-1][0] = 0.0
-                roc_auc = auc(fpr, tpr)
-                aucs.append(roc_auc)
                 tr.update(1)
 
             mean_tpr = np.mean(tprs, axis=0)
@@ -119,9 +145,9 @@ if __name__ == '__main__':
                         help='Model config file',
                         type=str)
 
-    parser.add_argument('--batch-size',
-                        default=100,
-                        dest='batch_size',
+    parser.add_argument('--max-events',
+                        default=100000,
+                        dest='max_events',
                         help='Number of training samples in a batch',
                         type=int)
 
@@ -135,4 +161,4 @@ if __name__ == '__main__':
          config['output']['name'],
          config['output']['plots'],
          config['misc']['plot_style'],
-         args.batch_size)
+         args.max_events)
