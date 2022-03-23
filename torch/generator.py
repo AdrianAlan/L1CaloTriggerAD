@@ -7,16 +7,18 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
     def __init__(self,
                  source,
                  device,
-                 flip_prob=0.,
+                 flatten=False,
+                 flip_prob=None,
                  normalize=False,
                  standardize=True,
                  signal=False):
         """Generator for CMS Calorimeter Layer-1 Trigger with UCTRegions"""
         self.source = source
         self.device = device
+        self.flatten = flatten
+        self.flip_prob = flip_prob
         self.normalize = normalize
         self.standardize = standardize
-        self.flip_prob = flip_prob
         self.label = int(signal)
 
     def __getitem__(self, index):
@@ -32,6 +34,17 @@ class L1UCTRegionsDataset(torch.utils.data.Dataset):
         elif self.normalize:
             calorimeter = self._normalize(calorimeter,
                                           self.normalize)
+
+        if self.flatten:
+            bins = calorimeter.nonzero()
+            eta, phi = bins[:, 2], bins[:, 1]
+            et = calorimeter.squeeze()[phi, eta]
+            order = torch.argsort(et, descending=True)
+            eta, phi, et = eta[order], phi[order], et[order]
+            c = torch.vstack((eta/14., phi/18., et))
+            target = torch.zeros(3, 252)
+            target[:, :c.shape[1]] = c
+            return target.T, labels
 
         if self.flip_prob:
             if torch.rand(1) < self.flip_prob:
