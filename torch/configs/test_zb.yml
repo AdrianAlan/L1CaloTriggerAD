@@ -1,0 +1,127 @@
+---
+dataset:
+ train: /eos/user/a/adpol/L1AD/Background/ZeroBias_0.h5
+ validation: /eos/user/a/adpol/L1AD/Background/ZeroBias_1.h5
+ test_background: /eos/user/a/adpol/L1AD/Background/ZeroBias_2.h5
+ test_signal:
+  - name: 'GluGluToHHTo4B_node_SM_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/GluGluToHHTo4B_node_SM_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/HTo2LongLivedTo4mu_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/HTo2LongLivedTo4mu_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/HTo2LongLivedTo4mu_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/HTo2LongLivedTo4mu_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV.h5
+  - name: 'VBFHToTauTau_M125_TuneCUETP8M1_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VBFHToTauTau_M125_TuneCUETP8M1_14TeV.h5
+  - name: 'VBF_HH_CV_1_C2V_1_C3_1_TuneCP5_PSweights_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VBF_HH_CV_1_C2V_1_C3_1_TuneCP5_PSweights_14TeV.h5
+  - name: 'VBF_HToInvisible_M125_TuneCUETP8M1_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VBF_HToInvisible_M125_TuneCUETP8M1_14TeV.h5
+  - name: 'VectorZPrimeToQQ_M100_pT300_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VectorZPrimeToQQ_M100_pT300_TuneCP5_14TeV.h5
+  - name: 'VectorZPrimeToQQ_M200_pT300_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VectorZPrimeToQQ_M200_pT300_TuneCP5_14TeV.h5
+  - name: 'VectorZPrimeToQQ_M50_pT300_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/VectorZPrimeToQQ_M50_pT300_TuneCP5_14TeV.h5
+  - name: 'ZprimeToZH_MZprime1000_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/ZprimeToZH_MZprime1000_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV.h5
+  - name: 'ZprimeToZH_MZprime600_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/ZprimeToZH_MZprime600_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV.h5
+  - name: 'ZprimeToZH_MZprime800_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/110X/ZprimeToZH_MZprime800_MZ50_MH80_ZTouds_HTouds_narrow_TuneCP5_14TeV.h5
+  - name: 'GluGluHToTauTau_M-125_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/GluGluHToTauTau_M-125_TuneCP5_14TeV.h5
+  - name: 'GluGluToHHTo4B_node_cHHH1_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/GluGluToHHTo4B_node_cHHH1_TuneCP5_14TeV.h5
+  - name: 'GluGluToHHTo4B_node_cHHH5_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/GluGluToHHTo4B_node_cHHH5_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-1000_MFF-450_CTau-100000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-1000_MFF-450_CTau-100000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-12_CTau-9000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-12_CTau-9000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-25_CTau-15000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-25_CTau-15000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-50_CTau-30000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-50_CTau-30000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-250_MFF-120_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-250_MFF-120_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-250_MFF-120_CTau-1000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-250_MFF-120_CTau-1000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-250_MFF-60_CTau-1000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-250_MFF-60_CTau-1000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-160_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-160_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-160_CTau-1000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-160_CTau-1000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-160_CTau-500mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-160_CTau-500mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-80_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-80_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-80_CTau-1000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-80_CTau-1000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4b_MH-350_MFF-80_CTau-500mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4b_MH-350_MFF-80_CTau-500mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4mu_MH-1000_MFF-450_CTau-10000mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4mu_MH-125_MFF-12_CTau-900mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4mu_MH-125_MFF-25_CTau-1500mm_TuneCP5_14TeV.h5
+  - name: 'HTo2LongLivedTo4mu_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/HTo2LongLivedTo4mu_MH-125_MFF-50_CTau-3000mm_TuneCP5_14TeV.h5
+  - name: 'SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV.h5
+  - name: 'SUSYGluGluToBBHToBB_NarrowWidth_M-120_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/SUSYGluGluToBBHToBB_NarrowWidth_M-120_TuneCP5_14TeV.h5
+  - name: 'SUSYGluGluToBBHToBB_NarrowWidth_M-350_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/SUSYGluGluToBBHToBB_NarrowWidth_M-350_TuneCP5_14TeV.h5
+  - name: 'SUSYGluGluToBBHToBB_NarrowWidth_M-600_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/SUSYGluGluToBBHToBB_NarrowWidth_M-600_TuneCP5_14TeV.h5
+  - name: 'TprimeBToTH_M-650_LH_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/TprimeBToTH_M-650_LH_TuneCP5_14TeV.h5
+  - name: 'VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_14TeV.h5
+  - name: 'VBFHToInvisible_M125_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VBFHToInvisible_M125_TuneCP5_14TeV.h5
+  - name: 'VBFHToTauTau_M125_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VBFHToTauTau_M125_TuneCP5_14TeV.h5
+  - name: 'VectorZPrimeGammaToQQGamma_M-10_GPt-75_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VectorZPrimeGammaToQQGamma_M-10_GPt-75_TuneCP5_14TeV.h5
+  - name: 'VectorZPrimeToQQ_M-100_Pt-300_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VectorZPrimeToQQ_M-100_Pt-300_TuneCP5_14TeV.h5
+  - name: 'VectorZPrimeToQQ_M-200_Pt-300_TuneCP5_14TeV'
+    path: /eos/user/a/adpol/L1AD/Signal/120X/VectorZPrimeToQQ_M-200_Pt-300_TuneCP5_14TeV.h5
+  - name: 'QCD'
+    path: /eos/user/a/adpol/L1AD/Background/110X/QCD_2.h5
+  - name: 'SingleNeutrino_Pt-2To20'
+    path: /eos/user/a/adpol/L1AD/Background/120X/SingleNeutrino_Pt-2To20_2.h5
+  - name: 'SingleNeutrino_E-10_0.h5'
+    path: /eos/user/a/adpol/L1AD/Background/120X/SingleNeutrino_E-10_2.h5
+
+model:
+ class_name: DummyAutoencoder
+ criterion: nn.MSELoss
+
+settings:
+ standardize: False
+ normalize: False
+ flip_prob: .0
+
+output:
+ models: models
+ name: DummyAutoencoderZB
+ plots: ../plots
+ 
+misc:
+ plot_style: ../plots/physics.mplstyle
