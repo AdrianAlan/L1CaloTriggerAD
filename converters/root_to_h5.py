@@ -26,22 +26,26 @@ class Grid:
 
 @dataclass
 class DataSource:
-    et: ak.highlevel.Array = ak.Array([])
-    eta: ak.highlevel.Array = ak.Array([])
-    phi: ak.highlevel.Array = ak.Array([])
-    _vars = ['iet', 'ieta', 'iphi']
+    caloET: ak.highlevel.Array = ak.Array([])
+    caloEta: ak.highlevel.Array = ak.Array([])
+    caloPhi: ak.highlevel.Array = ak.Array([])
+    acceptanceFlag: ak.highlevel.Array = ak.Array([])
+    _calo_vars = ['iet', 'ieta', 'iphi']
+    _acceptance_vars = ['jetEta', 'jetPt']
 
-    def __init__(self, path, tree_name, span):
+    def __init__(self, path, tree_calo, tree_gen, span):
         self.root_files = [i for i in os.listdir(path) if i.endswith(".root")]
         self.path = path
-        self.tree_name = tree_name
-        iets, ietas, iphis = (), (), ()
+        self.tree_calo = tree_calo
+        self.tree_gen = tree_gen
+        iets, ietas, iphis, flags = (), (), (), ()
         n_files = len(self.root_files)
         with tqdm(total=n_files, desc='Processing files') as progress_bar:
             for root_file in self.root_files:
                 in_file = uproot.open('{}{}'.format(self.path, root_file))
-                tree = in_file[self.tree_name]
-                arrays = tree.arrays(self._vars)
+                # Process Calo Information
+                tree_calo = in_file[self.tree_calo]
+                arrays = tree_calo.arrays(self._calo_vars)
                 iet = arrays['iet']
                 ieta = arrays['ieta']
                 iphi = arrays['iphi']
@@ -50,13 +54,24 @@ class DataSource:
                 iets += (iet,)
                 ietas += (ieta,)
                 iphis += (iphi,)
+
+                # Process Generator Information
+                tree_gen = in_file[self.tree_gen]
+                arrays = tree_gen.arrays(self._acceptance_vars)
+                jetPT = arrays['jetPt']
+                jetEta = arrays['jetEta']
+                mask = (jetPT > 30.) & (abs(jetEta) < 2.4)
+                flags += (ak.any(mask, axis=-1),)
+
                 progress_bar.update(1)
-        self.et = ak.concatenate(iets)
-        self.eta = ak.concatenate(ietas)
-        self.phi = ak.concatenate(iphis)
+
+        self.caloET = ak.concatenate(iets)
+        self.caloEta = ak.concatenate(ietas)
+        self.caloPhi = ak.concatenate(iphis)
+        self.acceptanceFlag = ak.concatenate(flags)
 
     def __len__(self):
-        return len(self.eta)
+        return len(self.caloET)
 
 
 def create_dataset(hdf5_dataset, name, data):
@@ -74,18 +89,21 @@ def get_split_events_range(events, split=[0.6, 0.2, 0.2]):
     return [i for i in zip(np.array([0, *cumsum]), cumsum)]
 
 
-def main(input_path, output_file, tree_name, split=True):
+def main(input_path, output_file, name_tree_calo, name_tree_gen, split=True):
     edges_eta = Grid((-28, 28), 14, 0)
     edges_phi = Grid((0, 72), 18, -2)
-    source = DataSource(input_path, tree_name, edges_eta.span)
+    source = DataSource(input_path,
+                        name_tree_calo,
+                        name_tree_gen,
+                        edges_eta.span)
     events = len(source)
     with tqdm(total=len(source), desc='Processing events') as progress_bar:
         placeholder = np.zeros((events, 18, 14))
         for i in range(events):
             # Get raw data
-            eta = ak.to_numpy(source.eta[i])
-            phi = ak.to_numpy(source.phi[i])
-            et = ak.to_numpy(source.et[i])
+            eta = ak.to_numpy(source.caloEta[i])
+            phi = ak.to_numpy(source.caloPhi[i])
+            et = ak.to_numpy(source.caloET[i])
 
             # Hack for phi (72, 71 to match phi=0)
             phi = phi % 70
@@ -99,14 +117,18 @@ def main(input_path, output_file, tree_name, split=True):
             placeholder[i, :, :] = regions
             progress_bar.update(1)
 
+    flags = ak.to_numpy(source.acceptanceFlag)
+
     if split:
         for i, (emin, emax) in enumerate(get_split_events_range(events)):
             output = '{}_{}.h5'.format(output_file.split('.')[0], i)
             with h5py.File(output, 'w') as dataset:
                 create_dataset(dataset, 'CaloRegions', placeholder[emin:emax])
+                create_dataset(dataset, 'AcceptanceFlag', flags[emin:emax])
     else:
         with h5py.File(output_file, 'w') as dataset:
             create_dataset(dataset, 'CaloRegions', placeholder)
+            create_dataset(dataset, 'AcceptanceFlag', flags)
 
 
 if __name__ == '__main__':
@@ -123,9 +145,14 @@ if __name__ == '__main__':
                         help='Output HDF5 files prefix',
                         type=str)
 
-    parser.add_argument('--tree',
+    parser.add_argument('--tree-calo',
                         type=str,
                         default='l1CaloTowerEmuTree/L1CaloTowerTree',
+                        help='Data tree')
+
+    parser.add_argument('--tree-generator',
+                        type=str,
+                        default='l1GeneratorTree/L1GenTree/Generator',
                         help='Data tree')
 
     parser.add_argument('--split',
@@ -134,4 +161,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.filepath, args.savepath, args.tree, args.split)
+    main(args.filepath,
+         args.savepath,
+         args.tree_calo,
+         args.tree_generator,
+         args.split)
