@@ -40,18 +40,26 @@ def main(filepath, savepath, dataset_split, chunksize, events):
 
     with tqdm(total=events, desc='Processing events') as progress_bar:
         for suffix, epf in enumerate(events_per_file):
-            placeholder = np.zeros((epf, 18, 14))
+            placeholder_cal = np.zeros((epf, 18, 14))
+            placeholder_ele = np.zeros((epf, 18, 14))
+            placeholder_tau = np.zeros((epf, 18, 14))
             for i in range(epf):
                 chunk = next(chunks)
                 eta = chunk.eta.values
                 phi = chunk.phi.values
                 et = chunk.et.values
-                placeholder[i, phi, eta] = et
+                electron = chunk.electron.values
+                tau = chunk.tau.values
+                placeholder_cal[i, phi, eta] = et
+                placeholder_ele[i, phi, eta] = electron
+                placeholder_tau[i, phi, eta] = tau
                 progress_bar.update(1)
 
             savepath_suffix = '{}_{}.h5'.format(savepath, suffix)
             with h5py.File(savepath_suffix, 'w') as dataset:
-                create_dataset(dataset, 'CaloRegions', placeholder)
+                create_dataset(dataset, 'CaloRegions', placeholder_cal)
+                create_dataset(dataset, 'ElectronBit', placeholder_ele)
+                create_dataset(dataset, 'TauBit', placeholder_tau)
 
 
 if __name__ == '__main__':
