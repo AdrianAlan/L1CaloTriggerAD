@@ -1,46 +1,46 @@
 import argparse
 import awkward as ak
-import numpy as np
 import h5py
+import numpy as np
 import uproot
-import os
 
 from dataclasses import dataclass
-from tqdm import tqdm
+from skimage.measure import block_reduce
 from utils import IsReadableDir, absoluteFilePaths
-
-
-@dataclass(frozen=True)
-class Grid:
-    span: dict
-    steps: int
-    offset: int
-    epsilon: float = 0.00001
-
-    def __post_init__(self):
-        bins = (1 + self.epsilon) * np.linspace(self.span[0] + self.offset,
-                                                self.span[1] + self.offset,
-                                                self.steps + 1)
-        object.__setattr__(self, 'bins', bins)
 
 
 @dataclass
 class DataSource:
-    eta: ak.highlevel.Array
+    ids: ak.highlevel.Array
     phi: ak.highlevel.Array
+    eta: ak.highlevel.Array
     et: ak.highlevel.Array
+    size: int
     _vars = ['ieta', 'iphi', 'iet']
 
     def __init__(self, input_file, tree_name):
         in_file = uproot.open(input_file)
         tree = in_file[tree_name]
         arrays = tree.arrays(self._vars)
-        self.eta = arrays['ieta']
-        self.phi = arrays['iphi']
-        self.et = arrays['iet']
+        eta = arrays['ieta']
+        phi = arrays['iphi']
+        et = arrays['iet']
+        self.size = len(eta)
+
+        mask = (eta >= -28) & (eta <= 28)
+        eta, phi, et = eta[mask], phi[mask], et[mask]
+        eta = ak.where(eta < 0, eta, eta - 1)
+        eta = eta + 28
+        phi = (phi + 2) % 72
+
+        ids = np.arange(len(eta))
+        self.ids = ak.flatten(ak.broadcast_arrays(ids, eta)[0])
+        self.phi = ak.flatten(phi, None)
+        self.eta = ak.flatten(eta, None)
+        self.et = ak.flatten(et, None)
 
     def __len__(self):
-        return len(self.eta)
+        return self.size
 
 
 def create_dataset(hdf5_dataset, name, data):
@@ -53,38 +53,25 @@ def create_dataset(hdf5_dataset, name, data):
 
 def main(input_dir, output_dir, tree_name):
     for input_file in absoluteFilePaths(input_dir):
+        print("Processing {}".format(input_file.split('/')[-1]))
+
         source = DataSource(input_file, tree_name)
-        edges_eta = Grid((-28, 28), 14, 0)
-        edges_phi = Grid((0, 72), 18, -2)
-
         events = len(source)
-        placeholder = np.zeros((events, 18, 14))
-        with tqdm(total=len(source), desc='Processing events') as progress_bar:
-            for i in range(events):
-                # Get raw data
-                eta = ak.to_numpy(source.eta[i])
-                phi = ak.to_numpy(source.phi[i])
-                et = ak.to_numpy(source.et[i])
+        deposits = np.zeros((events, 72, 56))
 
-                # Mask eta
-                mask = (eta > edges_eta.span[0]) & (eta <= edges_eta.span[1])
-                eta, phi, et = eta[mask], phi[mask], et[mask]
+        # Get raw data
+        ids = source.ids.to_numpy()
+        phi = source.phi.to_numpy()
+        eta = source.eta.to_numpy()
+        et = source.et.to_numpy()
 
-                # Hack for phi (72, 71 to match phi=0)
-                phi = phi % 70
+        deposits[ids, phi, eta] = et
+        deposits = block_reduce(deposits, (1, 4, 4), np.sum)
 
-                # Convert towers to regions
-                regions, _, _ = np.histogram2d(phi,
-                                               eta,
-                                               bins=[edges_phi.bins,
-                                                     edges_eta.bins],
-                                               weights=et)
-                placeholder[i, :, :] = regions
-                progress_bar.update(1)
-
+        del source
         output_file = '{}/{}.h5'.format(output_dir, input_file.split('/')[-1])
         with h5py.File(output_file, 'w') as dataset:
-            create_dataset(dataset, 'CaloRegions', placeholder)
+            create_dataset(dataset, 'CaloRegions', deposits)
 
 
 if __name__ == '__main__':

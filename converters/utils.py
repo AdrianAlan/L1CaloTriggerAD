@@ -25,7 +25,8 @@ class IsValidFile(argparse.Action):
             setattr(namespace, self.dest, prospective_file)
 
 
-def absoluteFilePaths(directory):
+def absoluteFilePaths(directory, extension='root'):
     for dirpath, _, filenames in os.walk(directory):
         for f in filenames:
-            yield os.path.abspath(os.path.join(dirpath, f))
+            if f.endswith(extension):
+                yield os.path.abspath(os.path.join(dirpath, f))
