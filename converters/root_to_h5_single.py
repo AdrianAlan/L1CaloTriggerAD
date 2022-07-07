@@ -51,27 +51,41 @@ def create_dataset(hdf5_dataset, name, data):
         dtype='i')
 
 
-def main(input_dir, output_dir, tree_name):
-    for input_file in absoluteFilePaths(input_dir):
-        print("Processing {}".format(input_file.split('/')[-1]))
+def main(input_dir, savepath, tree_name):
+    create = True
+    with h5py.File(savepath, 'a') as h5f:
+        for input_file in absoluteFilePaths(input_dir):
 
-        source = DataSource(input_file, tree_name)
-        events = len(source)
-        deposits = np.zeros((events, 72, 56))
+            print("Processing {}".format(input_file.split('/')[-1]))
 
-        # Get raw data
-        ids = source.ids.to_numpy()
-        phi = source.phi.to_numpy()
-        eta = source.eta.to_numpy()
-        et = source.et.to_numpy()
+            source = DataSource(input_file, tree_name)
+            events = len(source)
+            deposits = np.zeros((events, 72, 56))
 
-        deposits[ids, phi, eta] = et
-        deposits = block_reduce(deposits, (1, 4, 4), np.sum)
+            # Get raw data
+            ids = source.ids.to_numpy()
+            phi = source.phi.to_numpy()
+            eta = source.eta.to_numpy()
+            et = source.et.to_numpy()
+            del source
 
-        del source
-        output_file = '{}/{}.h5'.format(output_dir, input_file.split('/')[-1])
-        with h5py.File(output_file, 'w') as dataset:
-            create_dataset(dataset, 'CaloRegions', deposits)
+            # Calculate regional deposits
+            deposits[ids, phi, eta] = et
+            region_et = block_reduce(deposits, (1, 4, 4), np.sum)
+
+            if create:
+                h5f.create_dataset(
+                    'CaloRegions',
+                    data=region_et,
+                    maxshape=(None, 18, 14),
+                    chunks=True
+                )
+                create = False
+                continue
+
+            size = h5f["CaloRegions"].shape[0] + region_et.shape[0]
+            h5f["CaloRegions"].resize((size), axis=0)
+            h5f["CaloRegions"][-region_et.shape[0]:] = region_et
 
 
 if __name__ == '__main__':
