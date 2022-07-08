@@ -15,13 +15,15 @@ class DataSource:
     phi: ak.highlevel.Array
     eta: ak.highlevel.Array
     et: ak.highlevel.Array
+    acceptanceFlag: ak.highlevel.Array
     size: int
-    _vars = ['ieta', 'iphi', 'iet']
+    _calo_vars = ['iet', 'ieta', 'iphi']
+    _acceptance_vars = ['jetEta', 'jetPt']
 
-    def __init__(self, input_file, tree_name):
+    def __init__(self, input_file, tree_name, tree_gen=False):
         in_file = uproot.open(input_file)
         tree = in_file[tree_name]
-        arrays = tree.arrays(self._vars)
+        arrays = tree.arrays(self._calo_vars)
         eta = arrays['ieta']
         phi = arrays['iphi']
         et = arrays['iet']
@@ -39,6 +41,15 @@ class DataSource:
         self.eta = ak.flatten(eta, None)
         self.et = ak.flatten(et, None)
 
+        if tree_gen:
+            # Process Generator Information
+            tree_gen = in_file[tree_gen]
+            arrays = tree_gen.arrays(self._acceptance_vars)
+            jetPT = arrays['jetPt']
+            jetEta = arrays['jetEta']
+            mask = (jetPT > 30.) & (abs(jetEta) < 2.4)
+            self.acceptanceFlag = ak.any(mask, axis=-1)
+
     def __len__(self):
         return self.size
 
@@ -53,26 +64,28 @@ def create_dataset(hdf5_dataset, name, data):
 
 def main(input_dir, savepath, tree_name):
     create = True
-    with h5py.File(savepath, 'a') as h5f:
-        for input_file in absoluteFilePaths(input_dir):
+    for input_file in absoluteFilePaths(input_dir):
 
-            print("Processing {}".format(input_file.split('/')[-1]))
+        print("Processing {}".format(input_file.split('/')[-1]))
 
-            source = DataSource(input_file, tree_name)
-            events = len(source)
-            deposits = np.zeros((events, 72, 56))
+        source = DataSource(input_file, tree_calo, tree_generator)
+        events = len(source)
+        deposits = np.zeros((events, 72, 56))
 
-            # Get raw data
-            ids = source.ids.to_numpy()
-            phi = source.phi.to_numpy()
-            eta = source.eta.to_numpy()
-            et = source.et.to_numpy()
-            del source
+        # Get raw data
+        ids = source.ids.to_numpy()
+        phi = source.phi.to_numpy()
+        eta = source.eta.to_numpy()
+        et = source.et.to_numpy()
+        if tree_generator:
+            flags = source.acceptanceFlag.to_numpy()
+        del source
 
-            # Calculate regional deposits
-            deposits[ids, phi, eta] = et
-            region_et = block_reduce(deposits, (1, 4, 4), np.sum)
+        # Calculate regional deposits
+        deposits[ids, phi, eta] = et
+        region_et = block_reduce(deposits, (1, 4, 4), np.sum)
 
+        with h5py.File(savepath, 'a') as h5f:
             if create:
                 h5f.create_dataset(
                     'CaloRegions',
@@ -80,12 +93,22 @@ def main(input_dir, savepath, tree_name):
                     maxshape=(None, 18, 14),
                     chunks=True
                 )
+                if tree_generator:
+                    h5f.create_dataset(
+                        'AcceptanceFlag',
+                        data=flags,
+                        maxshape=(None,),
+                        chunks=True
+                    )
                 create = False
                 continue
 
             size = h5f["CaloRegions"].shape[0] + region_et.shape[0]
             h5f["CaloRegions"].resize((size), axis=0)
             h5f["CaloRegions"][-region_et.shape[0]:] = region_et
+            if tree_generator:
+                h5f["AcceptanceFlag"].resize((size), axis=0)
+                h5f["AcceptanceFlag"][-flags.shape[0]:] = flags
 
 
 if __name__ == '__main__':
@@ -102,11 +125,20 @@ if __name__ == '__main__':
                         help='Output HDF5 files prefix',
                         type=str)
 
-    parser.add_argument('--tree',
+    parser.add_argument('--tree-calo',
                         type=str,
                         default='l1CaloTowerEmuTree/L1CaloTowerTree',
                         help='Data tree')
 
+    parser.add_argument('--store-acceptance',
+                        action='store_true',
+                        help='Store acceptance flag')
+
     args = parser.parse_args()
+
+    if args.store_acceptance:
+        gen = 'l1GeneratorTree/L1GenTree/Generator'
+    else:
+        gen = False
 
     main(args.filepath, args.savepath, args.tree)
