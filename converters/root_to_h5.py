@@ -62,7 +62,14 @@ def create_dataset(hdf5_dataset, name, data):
         dtype='i')
 
 
-def main(input_dir, savepath, tree_name):
+def get_split(events, split=[0.6, 0.2, 0.2]):
+    split = [0] + split
+    split = np.array(split)
+    cumsum = np.cumsum(events*split).astype(int)
+    return [(i, j) for i, j in zip(cumsum, cumsum[1:])]
+
+
+def main(input_dir, savepath, tree_calo, tree_generator, split):
     create = True
     for input_file in absoluteFilePaths(input_dir):
 
@@ -110,6 +117,18 @@ def main(input_dir, savepath, tree_name):
                 h5f["AcceptanceFlag"].resize((size), axis=0)
                 h5f["AcceptanceFlag"][-flags.shape[0]:] = flags
 
+    if split:
+        with h5py.File(savepath, 'r') as h5f_in:
+            cr = h5f_in["CaloRegions"]
+            if tree_generator:
+                fs = h5f_in["AcceptanceFlag"]
+            for i, (s, e) in enumerate(get_split(cr.shape[0])):
+                output = '{}_{}.h5'.format(savepath.split('.')[0], i)
+                with h5py.File(output, 'w') as h5f_out:
+                    h5f_out.create_dataset('CaloRegions', data=cr[s:e])
+                    if tree_generator:
+                        h5f_out.create_dataset('AcceptanceFlag', data=fs[s:e])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -134,6 +153,10 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Store acceptance flag')
 
+    parser.add_argument('--split',
+                        action='store_true',
+                        help='Store acceptance flag')
+
     args = parser.parse_args()
 
     if args.store_acceptance:
@@ -141,4 +164,4 @@ if __name__ == '__main__':
     else:
         gen = False
 
-    main(args.filepath, args.savepath, args.tree)
+    main(args.filepath, args.savepath, args.tree_calo, gen, args.split)
