@@ -9,15 +9,20 @@ from skimage.measure import block_reduce
 from utils import IsReadableDir, absoluteFilePaths
 
 
+activityFraction = 0.125
+miscActivityFraction = 0.25
+
+
 @dataclass
 class DataSource:
     ids: ak.highlevel.Array
     phi: ak.highlevel.Array
     eta: ak.highlevel.Array
     et: ak.highlevel.Array
+    em: ak.highlevel.Array
     acceptanceFlag: ak.highlevel.Array
     size: int
-    _calo_vars = ['iet', 'ieta', 'iphi']
+    _calo_vars = ['iet', 'ieta', 'iphi', 'iem']
     _acceptance_vars = ['jetEta', 'jetPt']
 
     def __init__(self, input_file, tree_name, tree_gen=False):
@@ -27,10 +32,11 @@ class DataSource:
         eta = arrays['ieta']
         phi = arrays['iphi']
         et = arrays['iet']
+        em = arrays['iem']
         self.size = len(eta)
 
         mask = (eta >= -28) & (eta <= 28)
-        eta, phi, et = eta[mask], phi[mask], et[mask]
+        eta, phi, et, em = eta[mask], phi[mask], et[mask], em[mask]
         eta = ak.where(eta < 0, eta, eta - 1)
         eta = eta + 28
         phi = (phi + 2) % 72
@@ -40,6 +46,7 @@ class DataSource:
         self.phi = ak.flatten(phi, None)
         self.eta = ak.flatten(eta, None)
         self.et = ak.flatten(et, None)
+        self.em = ak.flatten(em, None)
 
         if tree_gen:
             # Process Generator Information
@@ -69,6 +76,37 @@ def get_split(events, split=[0.6, 0.2, 0.2]):
     return [(i, j) for i, j in zip(cumsum, cumsum[1:])]
 
 
+def veto_bit_eta(pattern, axis=None):
+    output = np.zeros(pattern.shape[:3]).astype(bool)
+    bad_patterns = [[0, 1, 0, 1],
+                    [0, 1, 1, 1],
+                    [1, 0, 0, 1],
+                    [1, 0, 1, 0],
+                    [1, 0, 1, 1],
+                    [1, 1, 0, 1],
+                    [1, 1, 1, 0],
+                    [1, 1, 1, 1]]
+    for bad_pattern in bad_patterns:
+        match = pattern == np.array(bad_pattern).reshape(1, 4, 1)
+        match = match.all(axis=(axis))
+        output |= match
+    return ~output
+
+
+def veto_bit_phi(pattern, axis=None):
+    output = np.zeros(pattern.shape[:3]).astype(bool)
+    bad_patterns = [[0, 1, 0, 1],
+                    [1, 0, 0, 1],
+                    [1, 0, 1, 0],
+                    [1, 0, 1, 1],
+                    [1, 1, 0, 1]]
+    for bad_pattern in bad_patterns:
+        match = pattern == np.array(bad_pattern).reshape(1, 1, 4)
+        match = match.all(axis=(axis))
+        output |= match
+    return ~output
+
+
 def main(input_dir, savepath, tree_calo, tree_generator, split):
     create = True
     for input_file in absoluteFilePaths(input_dir):
@@ -78,25 +116,67 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
         source = DataSource(input_file, tree_calo, tree_generator)
         events = len(source)
         deposits = np.zeros((events, 72, 56))
+        deposits_ecal = np.zeros((events, 72, 56))
 
         # Get raw data
         ids = source.ids.to_numpy()
         phi = source.phi.to_numpy()
         eta = source.eta.to_numpy()
         et = source.et.to_numpy()
+        em = source.em.to_numpy()
+
         if tree_generator:
             flags = source.acceptanceFlag.to_numpy()
         del source
 
         # Calculate regional deposits
         deposits[ids, phi, eta] = et
+        deposits_ecal[ids, phi, eta] = em
+
         region_et = block_reduce(deposits, (1, 4, 4), np.sum)
+        region_ecal_et = block_reduce(deposits_ecal, (1, 4, 4), np.sum)
+
+        # Calculate tau and electron bits
+        # Translated from https://github.com/pallabidas/cmssw/blob/l1t-integration-test-07Jul/L1Trigger/L1TCaloLayer1/src/UCTRegion.cc
+
+        # Calculate treshold values per region L 133
+        activityLevel = region_et * activityFraction
+        # Expand to the size of the detetor L137
+        activityLevelUpDim = np.repeat(
+            np.repeat(activityLevel, 4, axis=1), 4, axis=2
+        )
+        # Get the active tower information L139
+        activeTower = deposits > activityLevelUpDim
+        activeTowerET = block_reduce(activeTower * deposits, (1, 4, 4), np.sum)
+        # Calculate active stips
+        activeTowerEtaPattern = block_reduce(activeTower, (1, 1, 4), np.any)
+        activeTowerPhiPattern = block_reduce(activeTower, (1, 4, 1), np.any)
+        # Calculate veto bits for eg and tau patterns
+        veto_eta = block_reduce(activeTowerEtaPattern, (1, 4, 1), veto_bit_eta)
+        veto_phi = block_reduce(activeTowerPhiPattern, (1, 1, 4), veto_bit_phi)
+        veto = veto_eta & veto_phi
+        # L192
+        maxMiscActivityLevel = region_et * miscActivityFraction
+        egVeto = veto | ((region_et - region_ecal_et) > maxMiscActivityLevel)
+        tauVeto = veto | ((region_et - activeTowerET) > maxMiscActivityLevel)
 
         with h5py.File(savepath, 'a') as h5f:
             if create:
                 h5f.create_dataset(
                     'CaloRegions',
                     data=region_et,
+                    maxshape=(None, 18, 14),
+                    chunks=True
+                )
+                h5f.create_dataset(
+                    'EGBit',
+                    data=egVeto,
+                    maxshape=(None, 18, 14),
+                    chunks=True
+                )
+                h5f.create_dataset(
+                    'TauBit',
+                    data=tauVeto,
                     maxshape=(None, 18, 14),
                     chunks=True
                 )
@@ -112,7 +192,11 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
 
             size = h5f["CaloRegions"].shape[0] + region_et.shape[0]
             h5f["CaloRegions"].resize((size), axis=0)
+            h5f["EGBit"].resize((size), axis=0)
+            h5f["TauBit"].resize((size), axis=0)
             h5f["CaloRegions"][-region_et.shape[0]:] = region_et
+            h5f["EGBit"][-region_et.shape[0]:] = egVeto
+            h5f["TauBit"][-region_et.shape[0]:] = tauVeto
             if tree_generator:
                 h5f["AcceptanceFlag"].resize((size), axis=0)
                 h5f["AcceptanceFlag"][-flags.shape[0]:] = flags
