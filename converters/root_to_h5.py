@@ -9,10 +9,6 @@ from skimage.measure import block_reduce
 from utils import IsReadableDir, absoluteFilePaths
 
 
-activityFraction = 0.125
-miscActivityFraction = 0.25
-
-
 @dataclass
 class DataSource:
     ids: ak.highlevel.Array
@@ -61,6 +57,67 @@ class DataSource:
         return self.size
 
 
+@dataclass
+class ExtraBits:
+    egVeto: ak.highlevel.Array
+    tauVeto: ak.highlevel.Array
+
+    def __init__(self, deposits, region_et, region_ecal_et):
+        activityFraction = 0.125
+        miscActivityFraction = 0.25
+
+        # Calculate tau and electron bits
+        # Translated from https://github.com/pallabidas/cmssw/blob/l1t-integration-test-07Jul/L1Trigger/L1TCaloLayer1/src/UCTRegion.cc
+
+        # Calculate treshold values per region L 133
+        activityLevel = region_et * activityFraction
+        # Expand to the size of the detetor L137
+        activityLevelUpDim = np.repeat(
+            np.repeat(activityLevel, 4, axis=1), 4, axis=2
+        )
+        # Get the active tower information L139
+        activeTower = deposits > activityLevelUpDim
+        activeTowerET = block_reduce(activeTower * deposits, (1, 4, 4), np.sum)
+        # Calculate active stips
+        activeTowerEta = block_reduce(activeTower, (1, 1, 4), np.any)
+        activeTowerPhi = block_reduce(activeTower, (1, 4, 1), np.any)
+        # Calculate veto bits for eg and tau patterns
+        veto_eta = block_reduce(activeTowerEta, (1, 4, 1), self.veto_bit_eta)
+        veto_phi = block_reduce(activeTowerPhi, (1, 1, 4), self.veto_bit_phi)
+        veto = veto_eta & veto_phi
+        # L192
+        maxMiscActivity = region_et * miscActivityFraction
+        self.egVeto = veto | ((region_et - region_ecal_et) > maxMiscActivity)
+        self.tauVeto = veto | ((region_et - activeTowerET) > maxMiscActivity)
+
+    def veto_bit_eta(self, pattern, axis=None):
+        output = np.zeros(pattern.shape[:3]).astype(bool)
+        bad_patterns = [[0, 1, 0, 1],
+                        [0, 1, 1, 1],
+                        [1, 0, 0, 1],
+                        [1, 0, 1, 0],
+                        [1, 0, 1, 1],
+                        [1, 1, 0, 1],
+                        [1, 1, 1, 0],
+                        [1, 1, 1, 1]]
+        for bad_pattern in bad_patterns:
+            match = pattern == np.array(bad_pattern).reshape(1, 4, 1)
+            match = match.all(axis=(axis))
+            output |= match
+        return ~output
+
+    def veto_bit_phi(self, pattern, axis=None):
+        output = np.zeros(pattern.shape[:3]).astype(bool)
+        bad_patterns = [[0, 1, 0, 1],
+                        [1, 0, 0, 1],
+                        [1, 0, 1, 0],
+                        [1, 0, 1, 1],
+                        [1, 1, 0, 1]]
+        for bad_pattern in bad_patterns:
+            match = pattern == np.array(bad_pattern).reshape(1, 1, 4)
+            match = match.all(axis=(axis))
+            output |= match
+        return ~output
 
 
 def get_split(events, split=[0.6, 0.2, 0.2]):
@@ -68,37 +125,6 @@ def get_split(events, split=[0.6, 0.2, 0.2]):
     split = np.array(split)
     cumsum = np.cumsum(events*split).astype(int)
     return [(i, j) for i, j in zip(cumsum, cumsum[1:])]
-
-
-def veto_bit_eta(pattern, axis=None):
-    output = np.zeros(pattern.shape[:3]).astype(bool)
-    bad_patterns = [[0, 1, 0, 1],
-                    [0, 1, 1, 1],
-                    [1, 0, 0, 1],
-                    [1, 0, 1, 0],
-                    [1, 0, 1, 1],
-                    [1, 1, 0, 1],
-                    [1, 1, 1, 0],
-                    [1, 1, 1, 1]]
-    for bad_pattern in bad_patterns:
-        match = pattern == np.array(bad_pattern).reshape(1, 4, 1)
-        match = match.all(axis=(axis))
-        output |= match
-    return ~output
-
-
-def veto_bit_phi(pattern, axis=None):
-    output = np.zeros(pattern.shape[:3]).astype(bool)
-    bad_patterns = [[0, 1, 0, 1],
-                    [1, 0, 0, 1],
-                    [1, 0, 1, 0],
-                    [1, 0, 1, 1],
-                    [1, 1, 0, 1]]
-    for bad_pattern in bad_patterns:
-        match = pattern == np.array(bad_pattern).reshape(1, 1, 4)
-        match = match.all(axis=(axis))
-        output |= match
-    return ~output
 
 
 def main(input_dir, savepath, tree_calo, tree_generator, split):
@@ -127,32 +153,17 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
         deposits[ids, phi, eta] = et
         deposits_ecal[ids, phi, eta] = em
 
+        # Reduce to towers
         region_et = block_reduce(deposits, (1, 4, 4), np.sum)
         region_ecal_et = block_reduce(deposits_ecal, (1, 4, 4), np.sum)
 
-        # Calculate tau and electron bits
-        # Translated from https://github.com/pallabidas/cmssw/blob/l1t-integration-test-07Jul/L1Trigger/L1TCaloLayer1/src/UCTRegion.cc
-
-        # Calculate treshold values per region L 133
-        activityLevel = region_et * activityFraction
-        # Expand to the size of the detetor L137
-        activityLevelUpDim = np.repeat(
-            np.repeat(activityLevel, 4, axis=1), 4, axis=2
-        )
-        # Get the active tower information L139
-        activeTower = deposits > activityLevelUpDim
-        activeTowerET = block_reduce(activeTower * deposits, (1, 4, 4), np.sum)
-        # Calculate active stips
-        activeTowerEtaPattern = block_reduce(activeTower, (1, 1, 4), np.any)
-        activeTowerPhiPattern = block_reduce(activeTower, (1, 4, 1), np.any)
-        # Calculate veto bits for eg and tau patterns
-        veto_eta = block_reduce(activeTowerEtaPattern, (1, 4, 1), veto_bit_eta)
-        veto_phi = block_reduce(activeTowerPhiPattern, (1, 1, 4), veto_bit_phi)
-        veto = veto_eta & veto_phi
-        # L192
-        maxMiscActivityLevel = region_et * miscActivityFraction
-        egVeto = veto | ((region_et - region_ecal_et) > maxMiscActivityLevel)
-        tauVeto = veto | ((region_et - activeTowerET) > maxMiscActivityLevel)
+        source = ExtraBits(deposits, region_et, region_ecal_et)
+        egVeto = source.egVeto
+        tauVeto = source.tauVeto
+        del source
+        del deposits
+        del deposits_ecal
+        del region_ecal_et
 
         with h5py.File(savepath, 'a') as h5f:
             if create:
