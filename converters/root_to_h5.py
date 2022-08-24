@@ -174,7 +174,7 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
                     chunks=True
                 )
                 h5f.create_dataset(
-                    'EGBit',
+                    'ElectronBit',
                     data=egVeto,
                     maxshape=(None, 18, 14),
                     chunks=True
