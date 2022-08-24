@@ -26,36 +26,36 @@ class DataSource:
     _acceptance_vars = ['jetEta', 'jetPt']
 
     def __init__(self, input_file, tree_name, tree_gen=False):
-        in_file = uproot.open(input_file)
-        tree = in_file[tree_name]
-        arrays = tree.arrays(self._calo_vars)
-        eta = arrays['ieta']
-        phi = arrays['iphi']
-        et = arrays['iet']
-        em = arrays['iem']
-        self.size = len(eta)
+        with uproot.open(input_file) as in_file:
+            tree = in_file[tree_name]
+            arrays = tree.arrays(self._calo_vars)
+            eta = arrays['ieta']
+            phi = arrays['iphi']
+            et = arrays['iet']
+            em = arrays['iem']
+            self.size = len(eta)
 
-        mask = (eta >= -28) & (eta <= 28)
-        eta, phi, et, em = eta[mask], phi[mask], et[mask], em[mask]
-        eta = ak.where(eta < 0, eta, eta - 1)
-        eta = eta + 28
-        phi = (phi + 2) % 72
+            mask = (eta >= -28) & (eta <= 28)
+            eta, phi, et, em = eta[mask], phi[mask], et[mask], em[mask]
+            eta = ak.where(eta < 0, eta, eta - 1)
+            eta = eta + 28
+            phi = (phi + 2) % 72
 
-        ids = np.arange(len(eta))
-        self.ids = ak.flatten(ak.broadcast_arrays(ids, eta)[0])
-        self.phi = ak.flatten(phi, None)
-        self.eta = ak.flatten(eta, None)
-        self.et = ak.flatten(et, None)
-        self.em = ak.flatten(em, None)
+            ids = np.arange(len(eta))
+            self.ids = ak.flatten(ak.broadcast_arrays(ids, eta)[0])
+            self.phi = ak.flatten(phi, None)
+            self.eta = ak.flatten(eta, None)
+            self.et = ak.flatten(et, None)
+            self.em = ak.flatten(em, None)
 
-        if tree_gen:
-            # Process Generator Information
-            tree_gen = in_file[tree_gen]
-            arrays = tree_gen.arrays(self._acceptance_vars)
-            jetPT = arrays['jetPt']
-            jetEta = arrays['jetEta']
-            mask = (jetPT > 30.) & (abs(jetEta) < 2.4)
-            self.acceptanceFlag = ak.any(mask, axis=-1)
+            if tree_gen:
+                # Process Generator Information
+                tree_gen = in_file[tree_gen]
+                arrays = tree_gen.arrays(self._acceptance_vars)
+                jetPT = arrays['jetPt']
+                jetEta = arrays['jetEta']
+                mask = (jetPT > 30.) & (abs(jetEta) < 2.4)
+                self.acceptanceFlag = ak.any(mask, axis=-1)
 
     def __len__(self):
         return self.size
