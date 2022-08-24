@@ -61,12 +61,6 @@ class DataSource:
         return self.size
 
 
-def create_dataset(hdf5_dataset, name, data):
-    return hdf5_dataset.create_dataset(
-        name=name,
-        data=data,
-        compression='gzip',
-        dtype='i')
 
 
 def get_split(events, split=[0.6, 0.2, 0.2]):
