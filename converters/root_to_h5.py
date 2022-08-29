@@ -35,7 +35,7 @@ class DataSource:
             eta, phi, et, em = eta[mask], phi[mask], et[mask], em[mask]
             eta = ak.where(eta < 0, eta, eta - 1)
             eta = eta + 28
-            phi = (phi + 2) % 72
+            phi = (phi + 1) % 72
 
             ids = np.arange(len(eta))
             self.ids = ak.flatten(ak.broadcast_arrays(ids, eta)[0])
