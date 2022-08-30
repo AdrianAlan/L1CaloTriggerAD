@@ -79,12 +79,12 @@ class ExtraBits:
         activeTower = deposits > activityLevelUpDim
         activeTowerET = block_reduce(activeTower * deposits, (1, 4, 4), np.sum)
         # Calculate active stips
-        activeTowerEta = block_reduce(activeTower, (1, 1, 4), np.any)
-        activeTowerPhi = block_reduce(activeTower, (1, 4, 1), np.any)
+        activeTowerEta = block_reduce(activeTower, (1, 4, 1), np.any)
+        activeTowerPhi = block_reduce(activeTower, (1, 1, 4), np.any)
         # Calculate veto bits for eg and tau patterns
-        veto_eta = block_reduce(activeTowerEta, (1, 4, 1), self.veto_bit_eta)
-        veto_phi = block_reduce(activeTowerPhi, (1, 1, 4), self.veto_bit_phi)
-        veto = veto_eta & veto_phi
+        veto_eta = block_reduce(activeTowerEta, (1, 1, 4), self.veto_bit_eta)
+        veto_phi = block_reduce(activeTowerPhi, (1, 4, 1), self.veto_bit_phi)
+        veto = veto_eta | veto_phi
         # L192
         maxMiscActivity = (region_et * miscActivityFraction).astype(int)
         self.egVeto = veto | ((region_et - region_ecal_et) > maxMiscActivity)
@@ -101,10 +101,10 @@ class ExtraBits:
                         [1, 1, 1, 0],
                         [1, 1, 1, 1]]
         for bad_pattern in bad_patterns:
-            match = pattern == np.array(bad_pattern).reshape(1, 4, 1)
+            match = pattern == np.array(bad_pattern).reshape(1, 1, 4)
             match = match.all(axis=(axis))
             output |= match
-        return ~output
+        return output
 
     def veto_bit_phi(self, pattern, axis=None):
         output = np.zeros(pattern.shape[:3]).astype(bool)
@@ -114,10 +114,10 @@ class ExtraBits:
                         [1, 0, 1, 1],
                         [1, 1, 0, 1]]
         for bad_pattern in bad_patterns:
-            match = pattern == np.array(bad_pattern).reshape(1, 1, 4)
+            match = pattern == np.array(bad_pattern).reshape(1, 4, 1)
             match = match.all(axis=(axis))
             output |= match
-        return ~output
+        return output
 
 
 def get_split(events, split=[0.6, 0.2, 0.2]):
