@@ -70,7 +70,7 @@ class ExtraBits:
         # Translated from https://github.com/pallabidas/cmssw/blob/l1t-integration-test-07Jul/L1Trigger/L1TCaloLayer1/src/UCTRegion.cc
 
         # Calculate treshold values per region L 133
-        activityLevel = region_et * activityFraction
+        activityLevel = (region_et * activityFraction).astype(int)
         # Expand to the size of the detetor L137
         activityLevelUpDim = np.repeat(
             np.repeat(activityLevel, 4, axis=1), 4, axis=2
@@ -86,7 +86,7 @@ class ExtraBits:
         veto_phi = block_reduce(activeTowerPhi, (1, 1, 4), self.veto_bit_phi)
         veto = veto_eta & veto_phi
         # L192
-        maxMiscActivity = region_et * miscActivityFraction
+        maxMiscActivity = (region_et * miscActivityFraction).astype(int)
         self.egVeto = veto | ((region_et - region_ecal_et) > maxMiscActivity)
         self.tauVeto = veto | ((region_et - activeTowerET) > maxMiscActivity)
 
@@ -155,7 +155,9 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
 
         # Reduce to towers
         region_et = block_reduce(deposits, (1, 4, 4), np.sum)
+        region_et = np.where(region_et > 1023, 1023, region_et)
         region_ecal_et = block_reduce(deposits_ecal, (1, 4, 4), np.sum)
+        region_ecal_et = np.where(region_ecal_et > 1023, 1023, region_ecal_et)
 
         source = ExtraBits(deposits, region_et, region_ecal_et)
         egVeto = source.egVeto
