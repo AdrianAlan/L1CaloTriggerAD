@@ -176,7 +176,7 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
                     chunks=True
                 )
                 h5f.create_dataset(
-                    'ElectronBit',
+                    'EGBit',
                     data=egVeto,
                     maxshape=(None, 18, 14),
                     chunks=True
@@ -211,12 +211,16 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
     if split:
         with h5py.File(savepath, 'r') as h5f_in:
             cr = h5f_in["CaloRegions"]
+            eb = h5f_in["EGBit"]
+            tb = h5f_in["TauBit"]
             if tree_generator:
                 fs = h5f_in["AcceptanceFlag"]
             for i, (s, e) in enumerate(get_split(cr.shape[0])):
                 output = '{}_{}.h5'.format(savepath.split('.')[0], i)
                 with h5py.File(output, 'w') as h5f_out:
                     h5f_out.create_dataset('CaloRegions', data=cr[s:e])
+                    h5f_out.create_dataset('EGBit', data=eb[s:e])
+                    h5f_out.create_dataset('TauBit', data=tb[s:e])
                     if tree_generator:
                         h5f_out.create_dataset('AcceptanceFlag', data=fs[s:e])
 
