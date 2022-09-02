@@ -132,3 +132,6 @@ dmypy.json
 *.png
 *.pth
 *.yml
+
+keras/models
+torch/models
