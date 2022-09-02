@@ -21,8 +21,8 @@ class DataSource:
     _calo_vars = ['iet', 'ieta', 'iphi', 'iem']
     _acceptance_vars = ['jetEta', 'jetPt']
 
-    def __init__(self, input_file, tree_name, tree_gen=False):
-        with uproot.open(input_file) as in_file:
+    def __init__(self, in_file, tree_name, tree_gen=False):
+        with uproot.open(in_file) as in_file:
             tree = in_file[tree_name]
             arrays = tree.arrays(self._calo_vars)
             eta = arrays['ieta']
@@ -127,13 +127,18 @@ def get_split(events, split=[0.6, 0.2, 0.2]):
     return [(i, j) for i, j in zip(cumsum, cumsum[1:])]
 
 
-def main(input_dir, savepath, tree_calo, tree_generator, split):
+def main(input_dir,
+         base_savepath,
+         tree_calo,
+         tree_generator,
+         split,
+         concat=True):
     create = True
-    for input_file in absoluteFilePaths(input_dir):
+    for in_file in absoluteFilePaths(input_dir):
 
-        print("Processing {}".format(input_file.split('/')[-1]))
+        print("Processing {}".format(in_file.split('/')[-1]))
 
-        source = DataSource(input_file, tree_calo, tree_generator)
+        source = DataSource(in_file, tree_calo, tree_generator)
         events = len(source)
         deposits = np.zeros((events, 72, 56))
         deposits_ecal = np.zeros((events, 72, 56))
@@ -167,8 +172,13 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
         del deposits_ecal
         del region_ecal_et
 
+        if not concat:
+            savepath = '{}/{}.h5'.format(base_savepath, in_file.split('/')[-1])
+        else:
+            savepath = base_savepath
+
         with h5py.File(savepath, 'a') as h5f:
-            if create:
+            if create or not concat:
                 h5f.create_dataset(
                     'CaloRegions',
                     data=region_et,
@@ -194,7 +204,11 @@ def main(input_dir, savepath, tree_calo, tree_generator, split):
                         maxshape=(None,),
                         chunks=True
                     )
+                    del flags
                 create = False
+                del region_et
+                del egVeto
+                del tauVeto
                 continue
 
             size = h5f["CaloRegions"].shape[0] + region_et.shape[0]
@@ -252,6 +266,10 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Store acceptance flag')
 
+    parser.add_argument('--one-file',
+                        action='store_true',
+                        help='Store each file separately')
+
     args = parser.parse_args()
 
     if args.store_acceptance:
@@ -259,4 +277,11 @@ if __name__ == '__main__':
     else:
         gen = False
 
-    main(args.filepath, args.savepath, args.tree_calo, gen, args.split)
+    main(
+        args.filepath,
+        args.savepath,
+        args.tree_calo,
+        gen,
+        args.split,
+        not args.one_file
+    )

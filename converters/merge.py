@@ -12,19 +12,19 @@ def main(in_dir, savepath):
 
             with h5py.File(f, 'r') as h5f_in:
                 cr = h5f_in["CaloRegions"][:]
-                eb = h5f_in["ElectronBit"][:]
+                eb = h5f_in["EGBit"][:]
                 tb = h5f_in["TauBit"][:]
                 #fs = h5f_in["AcceptanceFlag"][:]
        
             if x:
                 size = h5f["CaloRegions"].shape[0] + cr.shape[0]
                 h5f["CaloRegions"].resize((size), axis=0)
-                h5f["ElectronBit"].resize((size), axis=0)
+                h5f["EGBit"].resize((size), axis=0)
                 h5f["TauBit"].resize((size), axis=0)
                 #h5f["AcceptanceFlag"].resize((size), axis=0)
 
                 h5f["CaloRegions"][-cr.shape[0]:] = cr
-                h5f["ElectronBit"][-cr.shape[0]:] = eb
+                h5f["EGBit"][-cr.shape[0]:] = eb
                 h5f["TauBit"][-cr.shape[0]:] = tb
                 #h5f["AcceptanceFlag"][-cr.shape[0]:] = fs
             else:
@@ -35,7 +35,7 @@ def main(in_dir, savepath):
                     chunks=True
                 )
                 h5f.create_dataset(
-                    'ElectronBit',
+                    'EGBit',
                     data=eb[:],
                     maxshape=(None, 18, 14),
                     chunks=True
@@ -47,11 +47,11 @@ def main(in_dir, savepath):
                     chunks=True
                 )
                 #h5f.create_dataset(
-                #        'AcceptanceFlag',
-                #        data=fs[:],
-                #        maxshape=(None,),
-                #        chunks=True
-                #    )
+                #    'AcceptanceFlag',
+                #    data=fs[:],
+                #    maxshape=(None,),
+                #    chunks=True
+                #)
 
 
 if __name__ == '__main__':
