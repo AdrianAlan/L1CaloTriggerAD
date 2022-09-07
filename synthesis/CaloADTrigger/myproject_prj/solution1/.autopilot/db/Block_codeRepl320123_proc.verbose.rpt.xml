@@ -1,0 +1,150 @@
+<profile>
+
+<section name = "Vivado HLS Report for 'Block_codeRepl320123_proc'" level="0">
+<item name = "Date">Wed Sep  7 18:58:58 2022
+</item>
+<item name = "Version">2020.1 (Build 2897737 on Wed May 27 20:21:37 MDT 2020)</item>
+<item name = "Project">myproject_prj</item>
+<item name = "Solution">solution1</item>
+<item name = "Product family">virtex7</item>
+<item name = "Target device">xc7vx690t-ffg1927-2</item>
+</section>
+
+<section name = "Performance Estimates" level="0">
+<item name = "Timing">
+<section name = "" level="1">
+<item name = "Summary"><table name="" hasTotal="0">
+<keys size="4">Clock, Target, Estimated, Uncertainty</keys>
+<column name="ap_clk">6.25 ns, 0 ns, 1.88 ns</column>
+</table>
+</item>
+</section>
+</item>
+<item name = "Latency">
+<section name = "" level="1">
+<item name = "Summary"><table name="" hasTotal="0">
+<keys size="8">, min, max, min, max, min, max, Type</keys>
+<column name="">0, 0, 0 ns, 0 ns, 0, 0, none</column>
+</table>
+</item>
+<item name = "Detail">
+<section name = "" level="1">
+<item name = "Instance"><table name="" hasTotal="0">
+<keys size="9">Instance, Module, min, max, min, max, min, max, Type</keys>
+</table>
+</item>
+<item name = "Loop"><table name="" hasTotal="0">
+<keys size="8">Loop Name, min, max, Latency, achieved, target, Count, Pipelined</keys>
+</table>
+</item>
+</section>
+</item>
+</section>
+</item>
+</section>
+
+<section name = "Utilization Estimates" level="0">
+<item name = "Summary"><table name="" hasTotal="1">
+<keys size="6">Name, BRAM_18K, DSP48E, FF, LUT, URAM</keys>
+<column name="DSP">-, -, -, -, -</column>
+<column name="Expression">-, -, 0, 2, -</column>
+<column name="FIFO">-, -, -, -, -</column>
+<column name="Instance">-, -, -, -, -</column>
+<column name="Memory">-, -, -, -, -</column>
+<column name="Multiplexer">-, -, -, 18, -</column>
+<column name="Register">-, -, 2522, -, -</column>
+<specialColumn name="Available">2940, 3600, 866400, 433200, 0</specialColumn>
+<specialColumn name="Utilization (%)">0, 0, ~0, ~0, 0</specialColumn>
+</table>
+</item>
+<item name = "Detail">
+<section name = "" level="1">
+<item name = "Instance"><table name="" hasTotal="1">
+<keys size="7">Instance, Module, BRAM_18K, DSP48E, FF, LUT, URAM</keys>
+</table>
+</item>
+<item name = "DSP48E"><table name="" hasTotal="0">
+<keys size="3">Instance, Module, Expression</keys>
+</table>
+</item>
+<item name = "Memory"><table name="" hasTotal="1">
+<keys size="10">Memory, Module, BRAM_18K, FF, LUT, URAM, Words, Bits, Banks, W*Bits*Banks</keys>
+</table>
+</item>
+<item name = "FIFO"><table name="" hasTotal="1">
+<keys size="8">Name, BRAM_18K, FF, LUT, URAM, Depth, Bits, Size:D*B</keys>
+</table>
+</item>
+<item name = "Expression"><table name="" hasTotal="1">
+<keys size="7">Variable Name, Operation, DSP48E, FF, LUT, Bitwidth P0, Bitwidth P1</keys>
+<column name="ap_block_state1">or, 0, 0, 2, 1, 1</column>
+</table>
+</item>
+<item name = "Multiplexer"><table name="" hasTotal="1">
+<keys size="5">Name, LUT, Input Size, Bits, Total Bits</keys>
+<column name="ap_done">9, 2, 1, 2</column>
+<column name="ap_return">9, 2, 2520, 5040</column>
+</table>
+</item>
+<item name = "Register"><table name="" hasTotal="1">
+<keys size="5">Name, FF, LUT, Bits, Const Bits</keys>
+<column name="ap_CS_fsm">1, 0, 1, 0</column>
+<column name="ap_done_reg">1, 0, 1, 0</column>
+<column name="ap_return_preg">2520, 0, 2520, 0</column>
+</table>
+</item>
+</section>
+</item>
+</section>
+
+<section name = "Interface" level="0">
+<item name = "Summary"><table name="" hasTotal="0">
+<keys size="6">RTL Ports, Dir, Bits, Protocol, Source Object, C Type</keys>
+<column name="ap_clk">in, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_rst">in, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_start">in, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_done">out, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_continue">in, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_idle">out, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_ready">out, 1, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="ap_return">out, 2520, ap_ctrl_hs, Block_codeRepl320123_proc, return value</column>
+<column name="link_in_0_V">in, 128, ap_none, link_in_0_V, pointer</column>
+<column name="link_in_1_V">in, 128, ap_none, link_in_1_V, pointer</column>
+<column name="link_in_2_V">in, 128, ap_none, link_in_2_V, pointer</column>
+<column name="link_in_3_V">in, 128, ap_none, link_in_3_V, pointer</column>
+<column name="link_in_4_V">in, 128, ap_none, link_in_4_V, pointer</column>
+<column name="link_in_5_V">in, 128, ap_none, link_in_5_V, pointer</column>
+<column name="link_in_6_V">in, 128, ap_none, link_in_6_V, pointer</column>
+<column name="link_in_7_V">in, 128, ap_none, link_in_7_V, pointer</column>
+<column name="link_in_8_V">in, 128, ap_none, link_in_8_V, pointer</column>
+<column name="link_in_9_V">in, 128, ap_none, link_in_9_V, pointer</column>
+<column name="link_in_10_V">in, 128, ap_none, link_in_10_V, pointer</column>
+<column name="link_in_11_V">in, 128, ap_none, link_in_11_V, pointer</column>
+<column name="link_in_12_V">in, 128, ap_none, link_in_12_V, pointer</column>
+<column name="link_in_13_V">in, 128, ap_none, link_in_13_V, pointer</column>
+<column name="link_in_14_V">in, 128, ap_none, link_in_14_V, pointer</column>
+<column name="link_in_15_V">in, 128, ap_none, link_in_15_V, pointer</column>
+<column name="link_in_16_V">in, 128, ap_none, link_in_16_V, pointer</column>
+<column name="link_in_17_V">in, 128, ap_none, link_in_17_V, pointer</column>
+<column name="link_in_18_V">in, 128, ap_none, link_in_18_V, pointer</column>
+<column name="link_in_19_V">in, 128, ap_none, link_in_19_V, pointer</column>
+<column name="link_in_20_V">in, 128, ap_none, link_in_20_V, pointer</column>
+<column name="link_in_21_V">in, 128, ap_none, link_in_21_V, pointer</column>
+<column name="link_in_22_V">in, 128, ap_none, link_in_22_V, pointer</column>
+<column name="link_in_23_V">in, 128, ap_none, link_in_23_V, pointer</column>
+<column name="link_in_24_V">in, 128, ap_none, link_in_24_V, pointer</column>
+<column name="link_in_25_V">in, 128, ap_none, link_in_25_V, pointer</column>
+<column name="link_in_26_V">in, 128, ap_none, link_in_26_V, pointer</column>
+<column name="link_in_27_V">in, 128, ap_none, link_in_27_V, pointer</column>
+<column name="link_in_28_V">in, 128, ap_none, link_in_28_V, pointer</column>
+<column name="link_in_29_V">in, 128, ap_none, link_in_29_V, pointer</column>
+<column name="link_in_30_V">in, 128, ap_none, link_in_30_V, pointer</column>
+<column name="link_in_31_V">in, 128, ap_none, link_in_31_V, pointer</column>
+<column name="link_in_32_V">in, 128, ap_none, link_in_32_V, pointer</column>
+<column name="link_in_33_V">in, 128, ap_none, link_in_33_V, pointer</column>
+<column name="link_in_34_V">in, 128, ap_none, link_in_34_V, pointer</column>
+<column name="link_in_35_V">in, 128, ap_none, link_in_35_V, pointer</column>
+</table>
+</item>
+</section>
+</profile>
