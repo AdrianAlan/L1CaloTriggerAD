@@ -26,16 +26,10 @@
 
 #include "defines.h"
 
-typedef struct
-{
-    ap_uint<10> et;
-    bool eg_veto;
-    bool tau_veto;
-    ap_uint<2> rloc_phi;
-    ap_uint<2> rloc_eta;
-} region_t;
-
 // Prototype of top level function for C-synthesis
-void myproject(ap_uint<128> link_in[N_CH_IN], ap_uint<128> link_out[N_CH_OUT]);
+void myproject(
+    input_t In[N_INPUT_1_1],
+    result_t layer10_out[N_LAYER_10]
+);
 
 #endif

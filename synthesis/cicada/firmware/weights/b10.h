@@ -7,9 +7,9 @@
 #define B10_H_
 
 #ifndef __SYNTHESIS__
-conv2d_2_bias_t b10[1];
+bias10_t b10[1];
 #else
-conv2d_2_bias_t b10[1] = {0.0000000000};
+bias10_t b10[1] = {0};
 #endif
 
 #endif

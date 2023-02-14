@@ -16,84 +16,32 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-//********************
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <hls_math.h>
-
-#include <fstream>
-#include <iomanip>
-#include <string>
-//************
 #include <iostream>
 
 #include "myproject.h"
 #include "parameters.h"
 
-const uint16_t NRegionsPerLink = 7; // Bits 8-21, 22-39, 40-55,..., 104-119, keeping ranges (7, 0) and (127, 120) unused
-const uint16_t MaxRegions = N_CH_IN * NRegionsPerLink;
-
-void myproject(ap_uint<128> link_in[N_CH_IN], ap_uint<128> link_out[N_CH_OUT]) {
-    // ALGO UNPACK START
-
-    // !!! Retain these 4 #pragma directives below in your algo_unpacked implementation !!!
-    #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
-    #pragma HLS INTERFACE ap_ctrl_hs port=return
-    
-    // null algo specific pragma: avoid fully combinatorial algo by specifying min latency
-    // otherwise algorithm clock input (ap_clk) gets optimized away
-    #pragma HLS latency min=4
-
-    static bool first = true; //true to print 
-    region_t centr_region[NR_CNTR_REG];
-#pragma HLS ARRAY_PARTITION variable=centr_region complete dim=1
-    regionLoop: for(int iRegion = 0; iRegion < NR_CNTR_REG; iRegion++) {
-#pragma HLS UNROLL
-            if(iRegion > MaxRegions) {
-                    fprintf(stderr, "Too many regions - aborting");
-                    exit(1);
-            }
-            int link_idx = iRegion / NRegionsPerLink;
-            int bitLo = ((iRegion - link_idx * NRegionsPerLink) % NRegionsPerLink) * 16 + 8;
-            int bitHi = bitLo + 15;
-            uint16_t region_raw = link_in[link_idx].range(bitHi, bitLo);
-            centr_region[iRegion].et = (region_raw & 0x3FF >> 0);   // 10 bits
-            centr_region[iRegion].eg_veto = (region_raw & 0x7FF) >> 10;   // 1 bit
-            centr_region[iRegion].tau_veto = (region_raw & 0xFFF) >> 11;   // 1 bit
-            centr_region[iRegion].rloc_phi = (region_raw & 0x3FFF) >> 12;   // 2 bit
-            centr_region[iRegion].rloc_eta = (region_raw & 0xFFFF) >> 14;   // 2 bit
-            //cout << "Calo region " << " ET: " << centr_region[iRegion].et << " Eta: " << centr_region[iRegion].rloc_eta << " Phi: " << centr_region[iRegion].rloc_phi << " EG veto: " << centr_region[iRegion].eg_veto << " Tau veto: " << centr_region[iRegion].tau_veto << endl;
-    }
-    //cout<<"Got all regions"<<endl;
-
-    input_t Inputs[N_INPUT_1_1];
-    result_t layer6_out[N_LAYER_6];
+void myproject(
+    input_t In[N_INPUT_1_1],
+    result_t layer10_out[N_LAYER_10]
+) {
 
     //hls-fpga-machine-learning insert IO
-    #pragma HLS ARRAY_RESHAPE variable=Inputs complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=layer6_out complete dim=0
-    #pragma HLS INTERFACE ap_vld port=Inputs,layer6_out 
+    #pragma HLS ARRAY_RESHAPE variable=In complete dim=0
+    #pragma HLS ARRAY_PARTITION variable=layer10_out complete dim=0
+    #pragma HLS INTERFACE ap_vld port=In,layer10_out 
     #pragma HLS DATAFLOW 
 
-    // Unpack calo ET values in et_calo array
-    for (int idx = 0; idx < NR_CNTR_REG; idx++) {
-#pragma HLS UNROLL
-            Inputs[idx] = centr_region[idx].et;
-    }
-    
 #ifndef __SYNTHESIS__
     static bool loaded_weights = false;
     if (!loaded_weights) {
         //hls-fpga-machine-learning insert load weights
-        nnet::load_weights_from_txt<weight2_t, 3780>(w2, "w2.txt");
-        nnet::load_weights_from_txt<bias2_t, 15>(b2, "b2.txt");
-        nnet::load_weights_from_txt<qbn_1_scale_t, 15>(s4, "s4.txt");
-        nnet::load_weights_from_txt<qbn_1_bias_t, 15>(b4, "b4.txt");
-        nnet::load_weights_from_txt<weight6_t, 15>(w6, "w6.txt");
-        nnet::load_weights_from_txt<bias6_t, 1>(b6, "b6.txt");
+        nnet::load_weights_from_txt<weight3_t, 27>(w3, "w3.txt");
+        nnet::load_weights_from_txt<bias3_t, 3>(b3, "b3.txt");
+        nnet::load_weights_from_txt<weight7_t, 2880>(w7, "w7.txt");
+        nnet::load_weights_from_txt<bias7_t, 20>(b7, "b7.txt");
+        nnet::load_weights_from_txt<weight10_t, 20>(w10, "w10.txt");
+        nnet::load_weights_from_txt<bias10_t, 1>(b10, "b10.txt");
         loaded_weights = true;
     }
 #endif
@@ -104,19 +52,22 @@ void myproject(ap_uint<128> link_in[N_CH_IN], ap_uint<128> link_out[N_CH_OUT]) {
 
     //hls-fpga-machine-learning insert layers
 
-    layer2_t layer2_out[N_LAYER_2];
-    #pragma HLS ARRAY_PARTITION variable=layer2_out complete dim=0
-    nnet::dense<input_t, layer2_t, config2>(Inputs, layer2_out, w2, b2); // Dense_1
+    layer3_t layer3_out[OUT_HEIGHT_3*OUT_WIDTH_3*N_FILT_3];
+    #pragma HLS ARRAY_PARTITION variable=layer3_out complete dim=0
+    nnet::conv_2d_cl<input_t, layer3_t, config3>(In, layer3_out, w3, b3); // conv
 
-    layer4_t layer4_out[N_LAYER_2];
-    #pragma HLS ARRAY_PARTITION variable=layer4_out complete dim=0
-    nnet::normalize<layer2_t, layer4_t, config4>(layer2_out, layer4_out, s4, b4); // QBN_1
-
-    layer5_t layer5_out[N_LAYER_2];
+    layer5_t layer5_out[OUT_HEIGHT_3*OUT_WIDTH_3*N_FILT_3];
     #pragma HLS ARRAY_PARTITION variable=layer5_out complete dim=0
-    nnet::relu<layer4_t, layer5_t, relu_config5>(layer4_out, layer5_out); // Activation_1
+    nnet::relu<layer3_t, layer5_t, relu_config5>(layer3_out, layer5_out); // relu1
 
-    nnet::dense<layer5_t, result_t, config6>(layer5_out, layer6_out, w6, b6); // Out
+    layer7_t layer7_out[N_LAYER_7];
+    #pragma HLS ARRAY_PARTITION variable=layer7_out complete dim=0
+    nnet::dense<layer5_t, layer7_t, config7>(layer5_out, layer7_out, w7, b7); // dense1
 
-    link_out[0].range(119, 8) = layer6_out;
+    layer9_t layer9_out[N_LAYER_7];
+    #pragma HLS ARRAY_PARTITION variable=layer9_out complete dim=0
+    nnet::relu<layer7_t, layer9_t, relu_config9>(layer7_out, layer9_out); // relu2
+
+    nnet::dense<layer9_t, result_t, config10>(layer9_out, layer10_out, w10, b10); // output
+
 }
