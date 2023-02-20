@@ -23,13 +23,13 @@
 
 void myproject(
     input_t In[N_INPUT_1_1],
-    result_t layer10_out[N_LAYER_10]
+    result_t layer12_out[N_LAYER_10]
 ) {
 
     //hls-fpga-machine-learning insert IO
     #pragma HLS ARRAY_RESHAPE variable=In complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=layer10_out complete dim=0
-    #pragma HLS INTERFACE ap_vld port=In,layer10_out 
+    #pragma HLS ARRAY_PARTITION variable=layer12_out complete dim=0
+    #pragma HLS INTERFACE ap_vld port=In,layer12_out 
     #pragma HLS DATAFLOW 
 
 #ifndef __SYNTHESIS__
@@ -68,6 +68,10 @@ void myproject(
     #pragma HLS ARRAY_PARTITION variable=layer9_out complete dim=0
     nnet::relu<layer7_t, layer9_t, relu_config9>(layer7_out, layer9_out); // relu2
 
-    nnet::dense<layer9_t, result_t, config10>(layer9_out, layer10_out, w10, b10); // output
+    layer10_t layer10_out[N_LAYER_10];
+    #pragma HLS ARRAY_PARTITION variable=layer10_out complete dim=0
+    nnet::dense<layer9_t, layer10_t, config10>(layer9_out, layer10_out, w10, b10); // output
+
+    nnet::relu<layer10_t, result_t, relu_config12>(layer10_out, layer12_out); // relu3
 
 }

@@ -34,10 +34,12 @@ typedef ap_uint<1> bias7_t;
 typedef ap_uint<1> layer7_index;
 typedef ap_ufixed<10,4,AP_RND,AP_SAT,AP_SAT> layer9_t;
 typedef ap_fixed<18,8> relu2_table_t;
-typedef ap_fixed<16,8> output_accum_t;
-typedef ap_ufixed<16,8> result_t;
+typedef ap_fixed<17,8> output_accum_t;
+typedef ap_fixed<17,8> layer10_t;
 typedef ap_fixed<12,2> weight10_t;
 typedef ap_uint<1> bias10_t;
 typedef ap_uint<1> layer10_index;
+typedef ap_ufixed<16,8> result_t;
+typedef ap_fixed<18,8> relu3_table_t;
 
 #endif
