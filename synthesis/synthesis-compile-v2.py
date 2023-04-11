@@ -218,7 +218,7 @@ def testing(org_model, hls_model, acceptance_error=0.5):
         hls_model,
         show_shapes=True,
         show_precision=True,
-        to_file="plots/hls4ml_model.png",
+        to_file="plots/synthesis_model_v2.1.png",
     )
 
 

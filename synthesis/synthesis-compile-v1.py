@@ -192,6 +192,12 @@ def testing(org_model, hls_model, acceptance_error=0.5):
     plt.clf()
     plt.close()
 
+    hls4ml.utils.plot_model(
+        hls_model,
+        show_shapes=True,
+        show_precision=True,
+        to_file="plots/synthesis_model_v1.1.png",
+    )
 
 if __name__ == "__main__":
     plt.style.use("../misc/style.mplstyle")
