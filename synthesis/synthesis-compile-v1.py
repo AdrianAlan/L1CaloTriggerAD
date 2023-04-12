@@ -106,7 +106,7 @@ def testing(org_model, hls_model, acceptance_error=0.5):
         "/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5",
         "/eos/project/c/cicada-project/data/2023/Signal/TT.h5",
         "/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5",
-        "/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_2.h5",
+        "/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5",
     ]:
         X_test = h5py.File(dataset_path, "r")["CaloRegions"][:]
         test_vectors = X_test.reshape(-1, 252)
@@ -146,8 +146,8 @@ def testing(org_model, hls_model, acceptance_error=0.5):
     tpr_model = []
     cmap = ["green", "red", "blue", "orange", "brown"]
 
-    scores_keras_normal = scores["scores_keras"]["ZB_RunA_2"]
-    scores_hls4ml_normal = scores["scores_hls4ml"]["ZB_RunA_2"]
+    scores_keras_normal = scores["scores_keras"]["EZB0_RunC_2"]
+    scores_hls4ml_normal = scores["scores_hls4ml"]["EZB0_RunC_2"]
 
     for dataset_name, color in zip(list(scores["scores_keras"].keys())[:-1], cmap):
         scores_keras_anomaly = scores["scores_keras"][dataset_name]
