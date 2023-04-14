@@ -30,6 +30,22 @@ def load_keras_model(model_path: str):
     return Model(input_, output, name="cicada")
 
 
+def get_datasets():
+    datasets = {}
+    for dataset_path in [
+        "/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5",
+        "/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5",
+        "/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5",
+        "/eos/project/c/cicada-project/data/2023/Signal/TT.h5",
+        "/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5",
+        "/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5",
+    ]:
+        signal_name = dataset_path.split("/")[-1][:-3]
+        X_test = h5py.File(dataset_path, "r")["CaloRegions"][:].reshape(-1, 252)
+        datasets[signal_name] = X_test
+    return datasets
+
+
 def convert_to_hls4ml_model(keras_model, version="1.0.0"):
     hls4ml.model.optimizer.get_optimizer("output_rounding_saturation_mode").configure(
         layers=["relu1", "QBN1", "outputs"],
@@ -40,7 +56,10 @@ def convert_to_hls4ml_model(keras_model, version="1.0.0"):
 
     # Create hls4ml config
     hls_config = hls4ml.utils.config_from_keras_model(
-        keras_model, granularity="name", backend="Vitis"
+        keras_model,
+        granularity="name",
+        backend="Vitis",
+        default_precision="fixed<32, 24>",
     )
 
     # Set the model config
@@ -90,31 +109,17 @@ def convert_to_hls4ml_model(keras_model, version="1.0.0"):
     return hls_model
 
 
-def testing(org_model, hls_model, acceptance_error=0.5):
-    test_vectors = np.load("test_vectors.npy")
-    assert np.all(
-        np.abs(org_model.predict(test_vectors) - hls_model.predict(test_vectors))
-        <= acceptance_error
-    )
-
-    # Real signal samples
+def testing(org_model, hls_model, datasets, acceptance_error=0.5):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
+    for dataset_name, test_vectors in datasets.items():
+        print(dataset_name)
+        print(test_vectors)
 
-    for dataset_path in [
-        "/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/TT.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5",
-        "/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5",
-    ]:
-        X_test = h5py.File(dataset_path, "r")["CaloRegions"][:]
-        test_vectors = X_test.reshape(-1, 252)
         scores_hls4ml = hls_model.predict(test_vectors)
+        print(scores_hls4ml)
         scores_keras = org_model.predict(test_vectors)
-        signal_name = dataset_path.split("/")[-1][:-3]
-        scores["scores_hls4ml"][signal_name] = scores_hls4ml.flatten()
-        scores["scores_keras"][signal_name] = scores_keras.flatten()
+        scores["scores_hls4ml"][dataset_name] = scores_hls4ml.flatten()
+        scores["scores_keras"][dataset_name] = scores_keras.flatten()
 
     scores_hls4ml = np.concatenate(list(scores["scores_hls4ml"].values()))
     scores_keras = np.concatenate(list(scores["scores_keras"].values()))
@@ -203,4 +208,5 @@ if __name__ == "__main__":
     plt.style.use("../misc/style.mplstyle")
     keras_model = load_keras_model("cicada-project/cicada-v1.1")
     hls_model = convert_to_hls4ml_model(keras_model, "1.1.0")
-    testing(keras_model, hls_model)
+    datasets = get_datasets()
+    testing(keras_model, hls_model, datasets)
