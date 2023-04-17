@@ -52,60 +52,35 @@ def get_datasets():
     return datasets
 
 
-def convert_to_hls4ml_model(keras_model, version="1.0.0"):
+def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
+    hls_config = hls4ml.utils.config_from_keras_model(
+        keras_model,
+        granularity="name",
+        backend="Vitis",
+        default_precision=default_precision,
+    )
+    hls_config["Model"]["ReuseFactor"] = 4
+    hls_config["Model"]["Strategy"] = "Latency"
+    hls_config["Model"]["ClockPeriod"] = 6.25
+    hls_config["Model"]["Trace"] = False
+    hls_config["Model"]["Precision"] = default_precision
+    hls_config["LayerName"]["inputs_"]["Precision"]["accum"] = "ap_ufixed<10, 10>"
+    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_ufixed<10, 10>"
+    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
+    hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
+    hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
+    hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
+
+    return hls_config
+
+
+def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     hls4ml.model.optimizer.get_optimizer("output_rounding_saturation_mode").configure(
         layers=["relu1", "relu2", "outputs"],
         rounding_mode="AP_RND",
         saturation_mode="AP_SAT",
         saturation_bits="AP_SAT",
     )
-
-    # Create hls4ml config
-    hls_config = hls4ml.utils.config_from_keras_model(
-        keras_model,
-        granularity="name",
-        backend="Vitis",
-        default_precision="fixed<32, 24>",
-    )
-
-    # Set the model config
-    hls_config["Model"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["inputs_"]["Precision"]["accum"] = "ap_uint<10>"
-    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_uint<10>"
-    hls_config["LayerName"]["inputs_"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["inputs_"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["conv"]["Precision"]["accum"] = "ap_fixed<17, 11>"
-    hls_config["LayerName"]["conv"]["Precision"]["result"] = "ap_fixed<16, 10>"
-    hls_config["LayerName"]["conv_linear"]["Precision"] = "ap_fixed<16, 10>"
-    hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
-    hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
-
-    hls_config["LayerName"]["relu1"]["Precision"]["result"] = "ap_ufixed<10, 4>"
-    hls_config["LayerName"]["relu1"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["relu1"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["dense1"]["Precision"]["accum"] = "ap_fixed<18, 11>"
-    hls_config["LayerName"]["dense1"]["Precision"]["result"] = "ap_fixed<16, 11>"
-    hls_config["LayerName"]["dense1_linear"]["Precision"]["result"] = "ap_fixed<16, 11>"
-    hls_config["LayerName"]["dense1"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["dense1"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["relu2"]["Precision"]["result"] = "ap_ufixed<10, 4>"
-    hls_config["LayerName"]["relu2"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["relu2"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["output"]["Precision"]["accum"] = "ap_fixed<16, 8>"
-    hls_config["LayerName"]["output"]["Precision"]["result"] = "ap_fixed<16, 8>"
-    hls_config["LayerName"]["output_linear"]["Precision"]["result"] = "ap_fixed<16, 8>"
-    hls_config["LayerName"]["output"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["output"]["ReuseFactor"] = 4
-
-    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
-    hls_config["LayerName"]["outputs"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["outputs"]["ReuseFactor"] = 4
 
     # Finish setting up the config
     cfg = hls4ml.converters.create_config()
@@ -226,6 +201,7 @@ def testing(org_model, hls_model, datasets, acceptance_error=0.5):
 if __name__ == "__main__":
     plt.style.use("../misc/style.mplstyle")
     keras_model = load_keras_model("cicada-project/cicada-v2.1")
-    hls_model = convert_to_hls4ml_model(keras_model, "2.1.0")
+    hls_config = get_hls_config(keras_model)
+    hls_model = convert_to_hls4ml_model(keras_model, hls_config, "2.1.0")
     datasets = get_datasets()
     testing(keras_model, hls_model, datasets, acceptance_error=2.0)

@@ -46,48 +46,32 @@ def get_datasets():
     return datasets
 
 
-def convert_to_hls4ml_model(keras_model, version="1.0.0"):
+def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
+    hls_config = hls4ml.utils.config_from_keras_model(
+        keras_model,
+        granularity="name",
+        backend="Vitis",
+        default_precision=default_precision,
+    )
+    hls_config["Model"]["ReuseFactor"] = 4
+    hls_config["Model"]["Strategy"] = "Latency"
+    hls_config["Model"]["ClockPeriod"] = 6.25
+    hls_config["Model"]["Trace"] = False
+    hls_config["Model"]["Precision"] = default_precision
+    hls_config["LayerName"]["inputs_"]["Precision"]["accum"] = "ap_ufixed<10, 10>"
+    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_ufixed<10, 10>"
+    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
+
+    return hls_config
+
+
+def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     hls4ml.model.optimizer.get_optimizer("output_rounding_saturation_mode").configure(
         layers=["relu1", "QBN1", "outputs"],
         rounding_mode="AP_RND",
         saturation_mode="AP_SAT",
         saturation_bits="AP_SAT",
     )
-
-    # Create hls4ml config
-    hls_config = hls4ml.utils.config_from_keras_model(
-        keras_model,
-        granularity="name",
-        backend="Vitis",
-        default_precision="fixed<32, 24>",
-    )
-
-    # Set the model config
-    hls_config["Model"]["ReuseFactor"] = 3
-    hls_config["Model"]["Strategy"] = "Latency"
-    hls_config["Model"]["ClockPeriod"] = 6.25
-    hls_config["Model"]["Trace"] = False
-
-    hls_config["LayerName"]["inputs_"]["Precision"]["accum"] = "ap_ufixed<10, 10>"
-    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_ufixed<10, 10>"
-
-    hls_config["LayerName"]["dense1"]["Precision"]["accum"] = "ap_fixed<20, 18>"
-    hls_config["LayerName"]["dense1"]["Precision"]["result"] = "ap_fixed<20, 18>"
-    hls_config["LayerName"]["dense1"]["ReuseFactor"] = 4
-    hls_config["LayerName"]["dense1_linear"]["Precision"] = "ap_fixed<20, 18>"
-
-    hls_config["LayerName"]["QBN1"]["Precision"]["scale"] = "ap_fixed<18, 3>"
-    hls_config["LayerName"]["QBN1"]["Precision"]["bias"] = "ap_fixed<18, 3>"
-    hls_config["LayerName"]["QBN1"]["Precision"]["accum"] = "ap_fixed<15, 12>"
-    hls_config["LayerName"]["QBN1"]["Precision"]["result"] = "ap_fixed<15, 12>"
-
-    hls_config["LayerName"]["relu1"]["Precision"]["result"] = "ap_ufixed<5, 2>"
-
-    hls_config["LayerName"]["output"]["Precision"]["accum"] = "ap_fixed<16, 8>"
-    hls_config["LayerName"]["output"]["Precision"]["result"] = "ap_fixed<16, 8>"
-    hls_config["LayerName"]["output_linear"]["Precision"] = "ap_fixed<16, 8>"
-
-    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
 
     # Finish setting up the config
     cfg = hls4ml.converters.create_config()
@@ -112,11 +96,7 @@ def convert_to_hls4ml_model(keras_model, version="1.0.0"):
 def testing(org_model, hls_model, datasets, acceptance_error=0.5):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
     for dataset_name, test_vectors in datasets.items():
-        print(dataset_name)
-        print(test_vectors)
-
         scores_hls4ml = hls_model.predict(test_vectors)
-        print(scores_hls4ml)
         scores_keras = org_model.predict(test_vectors)
         scores["scores_hls4ml"][dataset_name] = scores_hls4ml.flatten()
         scores["scores_keras"][dataset_name] = scores_keras.flatten()
@@ -204,9 +184,11 @@ def testing(org_model, hls_model, datasets, acceptance_error=0.5):
         to_file="plots/synthesis_model_v1.1.png",
     )
 
+
 if __name__ == "__main__":
     plt.style.use("../misc/style.mplstyle")
     keras_model = load_keras_model("cicada-project/cicada-v1.1")
-    hls_model = convert_to_hls4ml_model(keras_model, "1.1.0")
+    hls_config = get_hls_config(keras_model)
+    hls_model = convert_to_hls4ml_model(keras_model, hls_config, "1.1.0")
     datasets = get_datasets()
     testing(keras_model, hls_model, datasets)
