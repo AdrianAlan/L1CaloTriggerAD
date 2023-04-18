@@ -103,9 +103,6 @@ def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     return hls_model
 
 
-# In[31]:
-
-
 def testing(org_model, hls_model, datasets, acceptance_error=0.5):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
     for dataset_name, test_vectors in datasets.items():
