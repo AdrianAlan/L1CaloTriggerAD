@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 import hls4ml
 
+from hls4ml.model.layers import Activation as ActivationHLS
+from hls4ml.model.optimizer import OptimizerPass, register_pass
 from huggingface_hub import from_pretrained_keras
 from sklearn.metrics import roc_curve, auc
 from tensorflow.keras.models import Model
@@ -13,9 +15,17 @@ from qkeras import *
 
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-hls4ml.model.flow.flow.update_flow(
-    "convert", remove_optimizers=["qkeras_factorize_alpha"]
-)
+
+
+class EliminateLinearActivationCustom(OptimizerPass):
+    def match(self, node):
+        return (
+            isinstance(node, ActivationHLS) and node.get_attr("activation") == "linear"
+        )
+
+    def transform(self, model, node):
+        model.remove_node(node)
+        return True
 
 
 def load_keras_model(model_path: str):
@@ -197,6 +207,18 @@ def testing(org_model, hls_model, datasets, acceptance_error=0.5):
 
 if __name__ == "__main__":
     plt.style.use("../misc/style.mplstyle")
+    hls4ml.model.flow.flow.update_flow(
+        "convert", remove_optimizers=["qkeras_factorize_alpha"]
+    )
+    hls4ml.model.flow.flow.update_flow(
+        "optimize", remove_optimizers=["eliminate_linear_activation"]
+    )
+    register_pass(
+        "overwrite_eliminate_linear_activation", EliminateLinearActivationCustom
+    )
+    hls4ml.model.flow.flow.update_flow(
+        "convert", add_optimizers=["overwrite_eliminate_linear_activation"]
+    )
     keras_model = load_keras_model("cicada-project/cicada-v2.1")
     hls_config = get_hls_config(keras_model)
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, "2.1.0")
