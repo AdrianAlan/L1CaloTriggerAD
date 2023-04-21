@@ -39,7 +39,7 @@ def load_keras_model(model_path: str):
     x = org_model.layers[4](x)
     output = Activation("relu", name="outputs")(x)
 
-    return Model(input_, output, name="cicada")
+    return Model(input_, output, name="cicada"), org_model
 
 
 def get_datasets():
@@ -292,6 +292,33 @@ def tune_batch_norm_precision(
     return hls_config
 
 
+def adjust_result_precision(
+    layers, hls_config, profiling, test_vector, keras_model, keras_out, accepted_error
+):
+    for layer in layers[:-1]:
+        result_precision = re.findall(
+            "\d+", hls_config["LayerName"][layer]["Precision"]["result"]
+        )
+        int_ = math.ceil(math.log(int(np.max(np.abs(profiling[layer]))) + 1, 2)) + 1
+        decimal = search_for_best(
+            int_,
+            int(result_precision[0]),
+            layer,
+            "result",
+            test_vector,
+            keras_model,
+            keras_out,
+            accepted_error,
+            False,
+            other=int_,
+        )
+        hls_config["LayerName"][layer]["Precision"][
+            "result"
+        ] = "ap_fixed<{}, {}>".format(decimal, int_)
+    hls_config["LayerName"][layers[-1]]["Precision"]["result"] = "ap_fixed<16, 8>"
+    return hls_config
+
+
 if __name__ == "__main__":
     # Load plottling style
     plt.style.use("../misc/style.mplstyle")
@@ -311,7 +338,7 @@ if __name__ == "__main__":
     )
 
     # Load QKeras model
-    keras_model = load_keras_model("cicada-project/cicada-v1.1")
+    keras_model, org_model = load_keras_model("cicada-project/cicada-v1.1")
 
     # Genrate hls4ml config
     hls_config = get_hls_config(keras_model)
@@ -321,6 +348,7 @@ if __name__ == "__main__":
     # Gather evaluation datasets
     datasets = get_datasets()
     test_vector = np.vstack(list(datasets.values()))
+    keras_out = keras_model.predict(test_vector)
 
     # Tune BatchNorm parameters in v1:
     bn_layers = [
@@ -328,7 +356,6 @@ if __name__ == "__main__":
     ]
     if len(bn_layers):
         bn_layer = bn_layers[0]
-        keras_out = keras_model.predict(test_vector)
         hls_config = tune_batch_norm_precision(
             "QBN1",
             bn_layer,
@@ -339,6 +366,18 @@ if __name__ == "__main__":
             accepted_error=0.5,
         )
 
+    # Tune result and accumulator precision
+    keras_trace = hls4ml.model.profiling.get_ymodel_keras(org_model, test_vector)
+    layers_to_tune = ["dense1", "QBN1", "output"]
+    adjust_result_precision(
+        layers_to_tune,
+        hls_config,
+        keras_trace,
+        test_vector,
+        keras_model,
+        keras_out,
+        accepted_error=0.5,
+    )
     # Recomple the model
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, "1.1.0")
 
