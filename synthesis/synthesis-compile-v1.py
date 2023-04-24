@@ -319,6 +319,43 @@ def adjust_result_precision(
     return hls_config
 
 
+def adjust_accumulator_precision(
+    layers, test_vector, keras_model, keras_out, max_bits, accepted_error
+):
+    for layer in layers:
+        result_precision = re.findall(
+            "\d+", hls_config["LayerName"][layer]["Precision"]["result"]
+        )
+        int_ = search_for_best(
+            int(result_precision[0]),
+            max_bits,
+            layer,
+            "accum",
+            test_vector,
+            keras_model,
+            keras_out,
+            accepted_error,
+            True,
+            other=max_bits,
+        )
+        decimal = search_for_best(
+            max(int_, int(result_precision[1])),
+            max_bits,
+            layer,
+            "accum",
+            test_vector,
+            keras_model,
+            keras_out,
+            accepted_error,
+            False,
+            other=int_,
+        )
+        hls_config["LayerName"][layer]["Precision"][
+            "accum"
+        ] = "ap_fixed<{}, {}>".format(decimal, int_)
+    return hls_config
+
+
 if __name__ == "__main__":
     # Load plottling style
     plt.style.use("../misc/style.mplstyle")
@@ -378,6 +415,10 @@ if __name__ == "__main__":
         keras_out,
         accepted_error=0.5,
     )
+    adjust_accumulator_precision(
+        layers_to_tune, test_vector, keras_model, keras_out, 48, accepted_error=0.5
+    )
+
     # Recomple the model
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, "1.1.0")
 
