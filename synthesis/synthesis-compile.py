@@ -1,10 +1,13 @@
+import argparse
 import h5py
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import hls4ml
+import yaml
 
+from pathlib import Path
 from hls4ml.model.layers import Activation as ActivationHLS
 from hls4ml.model.optimizer import OptimizerPass, register_pass
 from huggingface_hub import from_pretrained_keras
@@ -39,16 +42,9 @@ def load_keras_model(model_path: str):
     return Model(input_, output, name="cicada"), org_model
 
 
-def get_datasets():
+def get_datasets(dataset_paths):
     datasets = {}
-    for dataset_path in [
-        "/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/TT.h5",
-        "/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5",
-        "/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5",
-    ]:
+    for dataset_path in dataset_paths:
         signal_name = dataset_path.split("/")[-1][:-3]
         X_test = h5py.File(dataset_path, "r")["CaloRegions"][:].reshape(-1, 252)
         datasets[signal_name] = X_test
@@ -71,9 +67,10 @@ def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
     hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_ufixed<10, 10>"
     hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
     # Additinal parameters needed for CICADAv2
-    hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
-    hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
-    hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
+    if "conv" in hls_config["LayerName"]:
+        hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
+        hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
+        hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
     return hls_config
 
 
@@ -91,7 +88,7 @@ def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     return hls_model
 
 
-def testing(org_model, hls_model, datasets, version):
+def testing(org_model, hls_model, datasets, version, mplstyle):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
     for dataset_name, test_vectors in datasets.items():
         scores_hls4ml = hls_model.predict(test_vectors)
@@ -101,6 +98,9 @@ def testing(org_model, hls_model, datasets, version):
 
     scores_hls4ml = np.concatenate(list(scores["scores_hls4ml"].values()))
     scores_keras = np.concatenate(list(scores["scores_keras"].values()))
+
+    # Load plottling style
+    plt.style.use(mplstyle)
 
     plt.xlabel("Anomaly Score, $S$", fontsize=18)
     plt.ylabel("Error, $|S_{Keras} - S_{hls4ml}|$", fontsize=18)
@@ -192,6 +192,7 @@ def search_for_best(
     high,
     layer,
     parameter,
+    hls_config,
     test_vector,
     keras_model,
     keras_out,
@@ -234,6 +235,7 @@ def adjust_additional_parameter(
         int(high_precision[0]),
         layer_name,
         parameter,
+        hls_config,
         test_vector,
         keras_model,
         keras_out,
@@ -295,6 +297,7 @@ def adjust_result_precision(
             int(result_precision[0]),
             layer,
             "result",
+            hls_config,
             test_vector,
             keras_model,
             keras_out,
@@ -310,7 +313,7 @@ def adjust_result_precision(
 
 
 def adjust_accumulator_precision(
-    layers, test_vector, keras_model, keras_out, max_bits, accepted_error
+    layers, hls_config, test_vector, keras_model, keras_out, max_bits, accepted_error
 ):
     for layer in layers:
         result_precision = re.findall(
@@ -321,6 +324,7 @@ def adjust_accumulator_precision(
             max_bits,
             layer,
             "accum",
+            hls_config,
             test_vector,
             keras_model,
             keras_out,
@@ -333,6 +337,7 @@ def adjust_accumulator_precision(
             max_bits,
             layer,
             "accum",
+            hls_config,
             test_vector,
             keras_model,
             keras_out,
@@ -346,19 +351,16 @@ def adjust_accumulator_precision(
     return hls_config
 
 
-if __name__ == "__main__":
-    VERSION = "2.1.0"
-    if VERSION == "1.1.0":
-        optimizer_sat_layers = ["relu1", "QBN1", "outputs"]
-        layers_to_tune = ["dense1", "QBN1", "output"]
-        accepted_error = 0.5
-    else:
-        optimizer_sat_layers = ["relu1", "relu2", "outputs"]
-        layers_to_tune = ["conv", "dense1", "output"]
-        accepted_error = 2.0
+def load_configuration():
+    parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
+    parser.add_argument("--config", "-c", type=Path, help="Configuration file")
+    args = parser.parse_args()
+    config = yaml.safe_load(open(args.config))
+    return config
 
-    # Load plottling style
-    plt.style.use("../misc/style.mplstyle")
+
+def main():
+    config = load_configuration()
 
     # Update default optimizers in hls4ml
     hls4ml.model.flow.flow.update_flow(
@@ -374,7 +376,7 @@ if __name__ == "__main__":
         "convert", add_optimizers=["overwrite_eliminate_linear_activation"]
     )
     hls4ml.model.optimizer.get_optimizer("output_rounding_saturation_mode").configure(
-        layers=optimizer_sat_layers,
+        layers=config["optimizer_sat_layers"],
         rounding_mode="AP_RND",
         saturation_mode="AP_SAT",
         saturation_bits="AP_SAT",
@@ -382,16 +384,16 @@ if __name__ == "__main__":
 
     # Load QKeras model
     keras_model, org_model = load_keras_model(
-        "cicada-project/cicada-v{}".format(".".join(VERSION.split(".")[:-1]))
+        "cicada-project/cicada-v{}".format(".".join(config["version"].split(".")[:-1]))
     )
 
     # Genrate hls4ml config
     hls_config = get_hls_config(keras_model)
     # Genrate hls4ml model
-    hls_model = convert_to_hls4ml_model(keras_model, hls_config, VERSION)
+    hls_model = convert_to_hls4ml_model(keras_model, hls_config, config["version"])
 
     # Gather evaluation datasets
-    datasets = get_datasets()
+    datasets = get_datasets(config["datasets"])
     test_vector = np.vstack(list(datasets.values()))
     keras_out = keras_model.predict(test_vector)
 
@@ -408,31 +410,36 @@ if __name__ == "__main__":
             test_vector,
             keras_model,
             keras_out,
-            accepted_error=accepted_error,
+            accepted_error=config["accepted_error"],
         )
 
     # Tune result and accumulator precision
     keras_trace = hls4ml.model.profiling.get_ymodel_keras(org_model, test_vector)
     adjust_result_precision(
-        layers_to_tune,
+        config["layers_to_tune"],
         hls_config,
         keras_trace,
         test_vector,
         keras_model,
         keras_out,
-        accepted_error=accepted_error,
+        accepted_error=config["accepted_error"],
     )
     adjust_accumulator_precision(
-        layers_to_tune,
+        config["layers_to_tune"],
+        hls_config,
         test_vector,
         keras_model,
         keras_out,
         48,
-        accepted_error=accepted_error,
+        accepted_error=config["accepted_error"],
     )
 
     # Recomple the model
-    hls_model = convert_to_hls4ml_model(keras_model, hls_config, VERSION)
+    hls_model = convert_to_hls4ml_model(keras_model, hls_config, config["version"])
 
     # Final tests of the final configuration
-    testing(keras_model, hls_model, datasets, VERSION)
+    testing(keras_model, hls_model, datasets, config["version"], config["mplstyle"])
+
+
+if __name__ == "__main__":
+    main()

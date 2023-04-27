@@ -1,0 +1,19 @@
+---
+mplstyle: ../plots/physics.mplstyle
+version: 1.1.0
+accepted_error: 0.5
+optimizer_sat_layers:
+ - relu1
+ - QBN1
+ - outputs
+layers_to_tune:
+ - dense1
+ - QBN1
+ - output
+datasets:
+ - /eos/project/c/cicada-project/data/2023/Signal/SUEP.h5
+ - /eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5
+ - /eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5
+ - /eos/project/c/cicada-project/data/2023/Signal/TT.h5
+ - /eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5
+ - /eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5
