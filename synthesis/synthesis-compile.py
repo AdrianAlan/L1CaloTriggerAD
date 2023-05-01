@@ -166,7 +166,7 @@ def testing(org_model, hls_model, datasets, version, mplstyle):
         label="3 kHz trigger rate",
     )
     plt.xlim([0.0002861, 28.61])
-    plt.ylim([0.001, 1.0])
+    plt.ylim([0.01, 1.0])
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("Trigger Rate (MHz)")
