@@ -71,6 +71,7 @@ def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
         hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
         hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
         hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
+    hls_config["LayerName"]["dense1"]["ReuseFactor"] = 4
     return hls_config
 
 
