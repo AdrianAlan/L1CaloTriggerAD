@@ -63,8 +63,7 @@ def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
     hls_config["Model"]["ClockPeriod"] = 6.25
     hls_config["Model"]["Trace"] = False
     hls_config["Model"]["Precision"] = default_precision
-    hls_config["LayerName"]["inputs_"]["Precision"]["accum"] = "ap_ufixed<10, 10>"
-    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_ufixed<10, 10>"
+    hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_uint<10>"
     hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
     # Additinal parameters needed for CICADAv2
     if "conv" in hls_config["LayerName"]:
