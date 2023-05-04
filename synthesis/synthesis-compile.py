@@ -53,16 +53,9 @@ def get_datasets(dataset_paths):
 
 def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
     hls_config = hls4ml.utils.config_from_keras_model(
-        keras_model,
-        granularity="name",
-        backend="Vitis",
-        default_precision=default_precision,
+        keras_model, granularity="name", default_precision=default_precision
     )
-    hls_config["Model"]["ReuseFactor"] = 4
     hls_config["Model"]["Strategy"] = "Latency"
-    hls_config["Model"]["ClockPeriod"] = 6.25
-    hls_config["Model"]["Trace"] = False
-    hls_config["Model"]["Precision"] = default_precision
     hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_uint<10>"
     hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
     # Additinal parameters needed for CICADAv2
@@ -75,15 +68,17 @@ def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
 
 
 def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
-    cfg = hls4ml.converters.create_config()
-    cfg["IOType"] = "io_parallel"
-    cfg["HLSConfig"] = hls_config
-    cfg["KerasModel"] = keras_model
-    cfg["ClockPeriod"] = 6.25
-    cfg["OutputDir"] = "cicada-v{}".format(version)
-    cfg["Part"] = "xc7vx690tffg1927-2"
-    cfg["Version"] = version
-    hls_model = hls4ml.converters.keras_to_hls(cfg)
+    hls_model = hls4ml.converters.convert_from_keras_model(
+        keras_model,
+        clock_period=6.25,
+        backend="Vitis",
+        hls_config=hls_config,
+        io_type="io_parallel",
+        output_dir="cicada-v{}".format(version),
+        part="xc7vx690tffg1927-2",
+        project_name="cicada",
+        version=version,
+    )
     hls_model.compile()
     return hls_model
 
