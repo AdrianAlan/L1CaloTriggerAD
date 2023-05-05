@@ -1,11 +1,14 @@
 import argparse
+import glob
 import h5py
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import tensorflow as tf
-import hls4ml
+import shutil
 import yaml
+import hls4ml
 
 from pathlib import Path
 from hls4ml.model.layers import Activation as ActivationHLS
@@ -16,7 +19,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from qkeras import *
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+tf.compat.v1.logging.set_verbity(tf.compat.v1.logging.ERROR)
 
 
 class EliminateLinearActivationCustom(OptimizerPass):
@@ -354,6 +357,12 @@ def load_configuration():
     return config
 
 
+def cleanup():
+    for f in glob.glob("*.tar.gz"):
+        os.remove(f)
+    shutil.rmtree("cicada-vdebug")
+
+
 def main():
     config = load_configuration()
 
@@ -434,6 +443,8 @@ def main():
 
     # Final tests of the final configuration
     testing(keras_model, hls_model, datasets, config["version"], config["mplstyle"])
+
+    cleanup()
 
 
 if __name__ == "__main__":
