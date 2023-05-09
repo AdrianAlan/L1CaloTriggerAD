@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/bulma-timeline.min.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link href="https://use.fontawesome.com/releases/v5.15.1/css/all.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200;0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;0,8..60,800;0,8..60,900;1,8..60,200;1,8..60,300;1,8..60,400;1,8..60,500;1,8..60,600;1,8..60,700;1,8..60,800;1,8..60,900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+  <title>CICADA Project</title>
+  <meta name="description" content="Welcome! This is the CICADA project official website." />
+  <link rel="apple-touch-icon" sizes="180x180" href="./images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./images/favicon-16x16.png">
+  <script defer src="https://use.fontawesome.com/releases/v5.4.0/js/all.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://cicada.web.cern.ch/">
+        <img src="./images/logo-ext.png" alt="CICADA: a modern triggering solution">
+      </a>
+
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+
+    <div id="navbarBasicExample" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="#home" data-target="home">
+          Home
+        </a>
+        <a class="navbar-item" href="#talks" data-target="talks">
+          Talks
+        </a>
+        <a class="navbar-item" href="#team" data-target="team">
+          Team
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <section id="home" class="hero is-fullheight video">
+    <div class="hero-video">
+      <video id="bgvid" playsinline autoplay muted loop>
+        <source src="./videos/cicada.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="hero-body">
+      <div class="container transparent" style="padding: 20px;">
+        <p class="title has-text-white">
+          CICADA Project
+        </p>
+        <p class="has-text-white">
+          We are the CICADA Project, brought to life by the curious minds from Princeton University
+          and the University of Wisconsin-Madison. Let's embark on the exciting journey of advancing the field of
+          high-energy physics through the development of cutting-edge algorithms for the CMS experiment hardware
+          trigger. Our focus? Beyond Standard Model searches, where innovation and dedication converge to explore the
+          deepest mysteries of the universe. Join us in this exploration of the unknown, where the future of particle
+          physics takes shape, one algorithm at a time. Together, we aspire to illuminate the path to new discoveries
+          and inspire the scientific community.
+        </p>
+        </br>
+        <p class="subtitle has-text-white">
+          Welcome to the world of CICADA - where curiosity meets collaboration, and the quest for knowledge knows no
+          bounds. Try our models and demos!
+        </p>
+        <div class="buttons">
+          <a class="button is-light is-outlined" href="https://huggingface.co/spaces/cicada-project/cicada-demo"
+            target="_blank">
+            <span class="icon">
+              <i class="fas fa-desktop"></i>
+            </span>
+            <span>Demo</span></a>
+          <a class="button is-light is-outlined" href="https://github.com/AdrianAlan/L1CaloTriggerAD" target="_blank">
+            <span class="icon">
+              <i class="fab fa-github"></i>
+            </span>
+            <span>Repository</span></a>
+          <a class="button is-light is-outlined" href="mailto:cicada.project@cern.ch" target="_blank">
+            <span class="icon">
+              <i class="far fa-envelope"></i>
+            </span>
+            <span>Contact Us</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="talks" class="section">
+    <h1 class="title">Our Latest Talks</h1>
+    <h2 class="subtitle">
+      Our previous talks containg the <strong>status</strong>, <strong>recommedations</strong> and
+      <strong>outlook</strong>.
+    </h2>
+
+    <div class="notification is-light">
+      L1 Workshop, Athens, 12th September 2023. Access <a
+        href="https://indico.cern.ch/event/1288569/contributions/5499809/">here</a>.
+    </div>
+
+    <div class="notification is-light">
+      L1 DPG Update, 24th July 2023. Access <a
+        href="https://indico.cern.ch/event/1298321/contributions/5510512/attachments/2689195/4666653/CICADA_DPG_v3.pdf">here</a>.
+    </div>
+
+    <div class="notification is-light">
+      L1 Readiness Review, 27th-28th March, 2023. Access <a
+        href="https://docs.google.com/presentation/d/1ocXtQSByVD4219gkD7XDZE-gkbNDVZev_dmzU4Rez7o/edit#slide=id.g227afe96894_0_0">here</a>.
+    </div>
+
+    <div class="notification is-light">
+      L1 Weekly meeting on 8th November, 2022. Access <a
+        href="https://indico.cern.ch/event/1224193/contributions/5149890/attachments/2552412/4397381/Ojalvo_caloL1AD_update_Nov22.pdf">here</a>.
+    </div>
+
+  </section>
+
+  <section id="team" class="section">
+    <h1 class="title">Meet the Team</h1>
+    <h2 class="subtitle">
+      We are a small group of <strong>multidisciplinary</strong> and <strong>multicultural</strong> team of students and
+      experts.
+    </h2>
+
+    <div class="container">
+      <div class="columns mb-4 has-text-centered">
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C5603AQEa2cF0YaD9fg/profile-displayphoto-shrink_200_200/0/1531451197933?e=1701302400&v=beta&t=pw4Ef9etmZidF1ahboa-woTUsS4zRNO32jiMTFAu6Eo">
+          </figure>
+          <h3 class="has-text-weight-bold">Isobel Ojalvo</h3>
+          <p>Project Lead</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C5603AQGtVk9eqIsQUw/profile-displayphoto-shrink_200_200/0/1517455801290?e=1701302400&v=beta&t=DBk4GhwHdkzdbBlzA0oX1lZM0-AqDaBRXBaa5gsmhIs">
+          </figure>
+          <h3 class="has-text-weight-bold">Sridhara Dasu</h3>
+          <p>Project Lead</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Alexander Savin</h3>
+          <p>Project Lead</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C5603AQHSVI-Ry7c10g/profile-displayphoto-shrink_200_200/0/1517567925747?e=1701302400&v=beta&t=MhCxgsxbrKS7NBUroLu6IqEbsAdgoEWBC2d2kT_QHls">
+          </figure>
+          <h3 class="has-text-weight-bold">Peter Elmer</h3>
+          <p>Project Lead</p>
+        </div>
+      </div>
+      <div class="columns mb-4 has-text-centered">
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C4E03AQFaTF3Uv2z-Cw/profile-displayphoto-shrink_200_200/0/1661426944079?e=1701302400&v=beta&t=0qIaysOzHm772KTQRdxLcdTwWr_fT43B-t0sBMIG1uc">
+          </figure>
+          <h3 class="has-text-weight-bold">Adrian Alan Pol</h3>
+          <p>Research Engineer</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Andrew Loeliger</h3>
+          <p>Research Scientist</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/D4E03AQGanaN0yHObQQ/profile-displayphoto-shrink_200_200/0/1685741096528?e=1701302400&v=beta&t=XqMuJurIHOHs60U9cSgOhXvypNLU7HSyRwu_tiGXzN8">
+          </figure>
+          <h3 class="has-text-weight-bold">Ho Fung Tsoi</h3>
+          <p>Research Scientist</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Luis Moreno</h3>
+          <p>Hardware Engineer</p>
+        </div>
+      </div>
+      <div class="columns mb-4 has-text-centered">
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Lucy Liu</h3>
+          <p>Research Scientist</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C4D03AQEfZFs8lkgouQ/profile-displayphoto-shrink_200_200/0/1611312530924?e=1701302400&v=beta&t=0ht_--3LciULxo2OJ4xUYsf7oMgccvCrAgBNJblGmeE">
+          </figure>
+          <h3 class="has-text-weight-bold">Kiley Kennedy</h3>
+          <p>Research Scientist</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C4D03AQEYOGN903WQlQ/profile-displayphoto-shrink_200_200/0/1645474198656?e=1701302400&v=beta&t=A_ZEtTCpVsY6cF0vhbOU_EXvtts3YeZ0buRq0YFyU1k">
+          </figure>
+          <h3 class="has-text-weight-bold">Pallabi Das</h3>
+          <p>Research Scientist</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/D4E03AQF1iVaMXvDU_A/profile-displayphoto-shrink_200_200/0/1693754052439?e=1701302400&v=beta&t=i1-9Bx5Ng3WnPlQXn-jXYWBvrqlAZ4WLDajopzdyCfM">
+          </figure>
+          <h3 class="has-text-weight-bold">Kathryn Coldham</h3>
+          <p>Research Engineer</p>
+        </div>
+      </div>
+      <div class="columns mb-4 has-text-centered">
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C4D03AQFX0YSsTkLA8Q/profile-displayphoto-shrink_200_200/0/1548689119499?e=1701302400&v=beta&t=qOL2Sx2kdmCdH9tYWTzaoNvFaBRk1xhsDQ8ZZ1lnB74">
+          </figure>
+          <h3 class="has-text-weight-bold">Varun Sharma</h3>
+          <p>Hardware Engineer</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Kiran Kumar Das</h3>
+          <p>Hardware Engineer</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://media.licdn.com/dms/image/C4E03AQE6ov_sGo5D1A/profile-displayphoto-shrink_200_200/0/1516358182771?e=1701302400&v=beta&t=4T_mtffpFpn9AvM-j-NA-BWckHWpOdhro6XIWcF-a70">
+          </figure>
+          <h3 class="has-text-weight-bold">Ales Svetek</h3>
+          <p>Hardware Engineer</p>
+        </div>
+        <div class="column">
+          <figure class="image is-128x128 is-inline-block">
+            <img class="is-rounded"
+              src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fkomarketing.com%2Fimages%2F2014%2F08%2Flinkedin-default.png&f=1&nofb=1&ipt=f9b87ce39e3b04bd75979618ce6d9641a70f280a61503314c090f9b9db24fde1&ipo=images">
+          </figure>
+          <h3 class="has-text-weight-bold">Tom Gorski</h3>
+          <p>Hardware Engineering Lead</p>
+        </div>
+      </div>
+  </section>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        Copyright by <strong>CICADA Team</strong>.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // Get all "navbar-burger" elements
+      const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+      // Add a click event on each of them
+      $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+
+          // Get the target from the "data-target" attribute
+          const target = el.dataset.target;
+          const $target = document.getElementById(target);
+
+          // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+          el.classList.toggle('is-active');
+          $target.classList.toggle('is-active');
+
+        });
+      });
+
+      const navItems = document.getElementById('navbarBasicExample').firstElementChild.children
+      for (item of navItems) {
+        console.log(item);
+        item.addEventListener('click', e => {
+          e.preventDefault();
+          window.scroll({
+            behavior: 'smooth',
+            left: 0,
+            top: document.getElementById(e.target.dataset.target).getBoundingClientRect().top +
+              window.scrollY
+          });
+        });
+      }
+
+    });
+  </script>
+
+</body>
+
+</html>
