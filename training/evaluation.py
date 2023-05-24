@@ -32,7 +32,6 @@ import joblib
 
 
 teacher = tf.keras.models.load_model('saved_models/teacher2023_aug1')
-teacher.save('saved_models/teacher2023_aug1')
 teacher.summary()
 
 
@@ -41,10 +40,7 @@ teacher.summary()
 
 tf.get_logger().setLevel('ERROR')
 #student = qkeras.utils.load_qmodel('saved_models/student2023_aug1_v1') # 2023 v1
-student = qkeras.utils.load_qmodel('saved_models/student2023_aug1_v2') # 2023 v2
-student.save('saved_models/student2023_aug1_v2/')
-student.summary()
-student.get_config()
+
 
 
 # # Loss distribution
@@ -172,8 +168,8 @@ plt.hist(MC_flag_loss_teacher[3], density = 1, bins = nbins, label = 'TT', color
 plt.hist(MC_flag_loss_teacher[4], density = 1, bins = nbins, label = 'VBFHto2C', color='purple', histtype = 'step', range = (rmin, rmax))
 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.xlabel("Anomaly score (teacher)")
-plt.show()
-
+plt.savefig("Anomaly score (teacher).png")
+plt.close()
 
 # # Comparison between original and reconstructed inputs
 
@@ -216,8 +212,8 @@ for i in range(280,300):
     ax.get_yaxis().set_visible(False)
     ax.set_title('abs(original-reconstructed)')
 
-    plt.show()
-
+    plt.savefig(f'Comparison between original and reconstructed inputs-{i}.png')
+    plt.close()
 
 # # Knowledge Distillation (+ quantizing with QKeras)
 
@@ -269,10 +265,14 @@ student.compile(optimizer = 'adam', loss = 'mse')
 
 
 history = student.fit(X_train.reshape((-1,252,1)), X_train_loss_teacher,
-                      epochs = 30,
+                      epochs = 1,
                       validation_data = (X_val.reshape((-1,252,1)), X_val_loss_teacher),
                       batch_size = 1024)
 
+student.save('saved_models/student2023_aug1_v2/')
+student = qkeras.utils.load_qmodel('saved_models/student2023_aug1_v2') # 2023 v2
+student.summary()
+student.get_config()
 
 # In[ ]:
 
@@ -285,7 +285,8 @@ axes.plot(history.history['val_loss'], label = 'val loss')
 axes.legend(loc = "upper right")
 axes.set_xlabel('Epoch')
 axes.set_ylabel('Loss')
-
+plt.savefig('train-val-student.png')
+plt.close()
 
 # In[ ]:
 
@@ -320,8 +321,8 @@ plt.title('CICADA_v3_v2')
 plt.legend(loc='best')
 plt.xlabel("Score")
 #plt.xticks(np.arange(rmin, rmax, step = 0.0002))
-plt.show()
-
+plt.savefig('CICADA_v3_v2.png')
+plt.close()
 
 # In[ ]:
 
@@ -376,8 +377,8 @@ plt.title('CICADA_v3_v2, scores on different ZB runs')
 plt.legend(loc='best')
 plt.xlabel("Score")
 #plt.xticks(np.arange(rmin, rmax, step = 0.0002))
-plt.show()
-
+plt.savefig('CICADA_v3_v2, scores on different ZB runs.png')
+plt.close()
 
 # # ROC plotting
 
@@ -456,8 +457,8 @@ axes.set_ylabel('Signal Efficiency',size=15)
 axes.set_title('Teacher Network',size=15)
 #axes.legend(loc='center left', bbox_to_anchor = (0.3, 0.3),fontsize=12)
 axes.legend(loc='center left', bbox_to_anchor=(0.26, 0.3),fontsize=12)
-plt.show()
-
+plt.savefig('Teacher Network.png')
+plt.close()
 
 # ### Student model ROC
 
@@ -500,8 +501,8 @@ axes.set_ylabel('Signal Efficiency',size=15)
 axes.set_title('CICADA_v3_v2, signal(Run3) vs ZB(2023)',size=15)
 axes.legend(loc='center left', bbox_to_anchor = (0.26, 0.3),fontsize=12)
 #axes.legend(loc='center left', bbox_to_anchor=(1, 0.3),fontsize=12)
-plt.show()
-
+plt.savefig("CICADA_v3_v2, signal(Run3) vs ZB(2023).png")
+plt.close()
 
 # # cross-validation
 
@@ -628,8 +629,8 @@ axes.set_xlabel('Trigger Rate (MHz)',size=17)
 axes.set_ylabel('Signal Efficiency',size=17)
 axes.set_title('CICADA_v3_v2, signal(Run3) vs ZB(2023)',size=17)
 axes.legend(loc='center left', bbox_to_anchor = (0.28, 0.3),fontsize=11)
-plt.show()
-
+plt.savefig("CICADA_v3_v2, signal(Run3) vs ZB(2023).png")
+plt.close()
 
 # In[ ]:
 

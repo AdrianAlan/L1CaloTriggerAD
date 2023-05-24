@@ -201,7 +201,8 @@ ax = sns.heatmap(ZB_A_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_0_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunA_0)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunA_0).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -209,7 +210,8 @@ ax = sns.heatmap(ZB_B_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_0_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunB_0)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunB_0).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -217,7 +219,8 @@ ax = sns.heatmap(ZB_C_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_0_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunC_0)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunC_0).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -225,7 +228,8 @@ ax = sns.heatmap(ZB_D_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_0_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunD_0)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunD_0).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -233,8 +237,8 @@ ax = sns.heatmap(EZB_C_0_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_0_mean.max
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (EphemeralZB2023RunC_0)')
-plt.show()
-
+plt.savefig('Mean Et (EphemeralZB2023RunC_0).png')
+plt.close()
 
 
 fig, ax = plt.subplots(figsize = (10,10))
@@ -243,7 +247,8 @@ ax = sns.heatmap(ZB_A_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_1_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunA_1)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunA_1).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -251,7 +256,8 @@ ax = sns.heatmap(ZB_B_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_1_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunB_1)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunB_1).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -259,7 +265,8 @@ ax = sns.heatmap(ZB_C_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_1_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunC_1)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunC_1).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -267,7 +274,8 @@ ax = sns.heatmap(ZB_D_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_1_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunD_1)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunD_1).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -275,7 +283,8 @@ ax = sns.heatmap(EZB_C_1_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_1_mean.max
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (EphemeralZB2023RunC_1)')
-plt.show()
+plt.savefig('Mean Et (EphemeralZB2023RunC_1).png')
+plt.close()
 
 
 
@@ -286,7 +295,8 @@ ax = sns.heatmap(ZB_A_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_2_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunA_2)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunA_2).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -294,7 +304,8 @@ ax = sns.heatmap(ZB_B_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_2_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunB_2)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunB_2).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -302,7 +313,8 @@ ax = sns.heatmap(ZB_C_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_2_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunC_2)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunC_2).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -310,7 +322,8 @@ ax = sns.heatmap(ZB_D_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_2_mean.max()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (ZB2023RunD_2)')
-plt.show()
+plt.savefig('Mean Et (ZB2023RunD_2).png')
+plt.close()
 
 fig, ax = plt.subplots(figsize = (10,10))
 ax = plt.subplot(2, 2, 2)
@@ -318,8 +331,8 @@ ax = sns.heatmap(EZB_C_2_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_2_mean.max
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 ax.set_title('Mean Et (EphemeralZB2023RunC_2)')
-plt.show()
-
+plt.savefig('Mean Et (EphemeralZB2023RunC_2).png')
+plt.close()
 
 # In[ ]:
 
@@ -345,7 +358,8 @@ plt.hist(EZB_C_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='20
 
 plt.xlabel("ZB Et")
 plt.legend(loc='best')
-plt.show()
+plt.savefig("ZB Et.png")
+plt.close()
 
 print('Mean ZB2023A_0 pT = ' + str(np.mean(ZB_A_0.reshape(-1))))
 print('Mean ZB2023B_0 pT = ' + str(np.mean(ZB_B_0.reshape(-1))))
@@ -423,10 +437,11 @@ teacher.compile(optimizer = keras.optimizers.Adam(learning_rate=0.001), loss = '
 
 
 history = teacher.fit(X_train, X_train,
-                      epochs = 40,
+                      epochs = 1,
                       validation_data = (X_val, X_val),
                       batch_size = 128)
 
+teacher.save('saved_models/teacher2023_aug1')
 
 # In[ ]:
 
@@ -438,7 +453,8 @@ axes.plot(history.history['val_loss'], label = 'val loss')
 axes.legend(loc = "upper right")
 axes.set_xlabel('Epoch')
 axes.set_ylabel('Loss')
-
+plt.savefig('train-val.png')
+plt.close()
 
 
 
