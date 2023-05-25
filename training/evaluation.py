@@ -22,7 +22,7 @@ from qkeras import *
 #from keras_tuner import Hyperband
 import joblib
 
-
+from models import CicadaV1, CicadaV2
 
 
 # # Save/load trained models
@@ -216,56 +216,14 @@ for i in range(280,300):
     plt.close()
 
 # # Knowledge Distillation (+ quantizing with QKeras)
+cicada_v1 = CicadaV1((252,)).get_model()
+cicada_v2 = CicadaV2((252,)).get_model()
+cicada_v1.compile(optimizer = 'adam', loss = 'mse')
+cicada_v2.compile(optimizer = 'adam', loss = 'mse')
 
-# In[ ]:
-
-
-# v1
-x_in = layers.Input(shape=(252,), name="In")
-
-x = QDense(15, kernel_quantizer=quantized_bits(2, 0, 1, alpha=1.0),
-           use_bias=False, name='dense1')(x_in)
-x = QBatchNormalization(beta_quantizer=quantized_bits(10, 2, 1, alpha='auto'),
-                        gamma_quantizer=quantized_bits(10, 2, 1, alpha='auto'),
-                        mean_quantizer=quantized_bits(10, 2, 1, alpha='auto'),
-                        variance_quantizer=quantized_bits(10, 2, 1, alpha='auto'),
-                        name = 'QBN1')(x)
-x = QActivation('quantized_relu(5, 2)', name='relu1')(x)
-x = QDense(1, kernel_quantizer=quantized_bits(4, 0, 1, alpha=1.0),
-           use_bias=False, name='output')(x)
-
-student = tf.keras.models.Model(x_in, x)
-student.summary()
-student.compile(optimizer = 'adam', loss = 'mse')
-
-
-# In[ ]:
-
-
-# v2
-x_in = layers.Input(shape=(252,), name="In")
-x = layers.Reshape((18,14,1), name='reshape')(x_in)
-
-x = QConv2D(3,(3,3), strides=2, padding="valid", use_bias=False,
-            kernel_quantizer=quantized_bits(16,4,1,alpha='auto'), name='conv')(x)
-x = QActivation('quantized_relu(16,4)', name='relu1')(x)
-x = layers.Flatten(name='flatten')(x)
-x = QDense(20, kernel_quantizer=quantized_bits(16,4,1,alpha='auto'),
-           use_bias=False, name='dense1')(x)
-x = QActivation('quantized_relu(16,4)', name='relu2')(x)
-x = QDense(1, kernel_quantizer=quantized_bits(16,2,1,alpha='auto'),
-           use_bias=False, name='output')(x)
-
-student = tf.keras.models.Model(x_in, x)
-student.summary()
-student.compile(optimizer = 'adam', loss = 'mse')
-
-
-# In[ ]:
-
-
+student = cicada_v2
 history = student.fit(X_train.reshape((-1,252,1)), X_train_loss_teacher,
-                      epochs = 1,
+                      epochs = 2,
                       validation_data = (X_val.reshape((-1,252,1)), X_val_loss_teacher),
                       batch_size = 1024)
 

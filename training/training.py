@@ -21,7 +21,7 @@ from qkeras import *
 #import keras_tuner
 #from keras_tuner import Hyperband
 import joblib
-
+from models import TeacherAutoencoder
 
 # # data files
 
@@ -381,47 +381,7 @@ print('Mean ZB2023C_2 pT = ' + str(np.mean(ZB_C_2.reshape(-1))))
 print('Mean ZB2023D_2 pT = ' + str(np.mean(ZB_D_2.reshape(-1))))
 print('Mean EphemeralZB2023C_2 pT = ' + str(np.mean(EZB_C_2.reshape(-1))))
 
-
-
-# # CNN AE (teacher model)
-
-# In[ ]:
-
-
-encoder_input = tf.keras.Input(shape=(18,14,1), name='input')
-
-encoder = layers.Conv2D(20, (3,3), strides=1, padding='same', name='conv2d_1')(encoder_input)
-encoder = layers.Activation('relu', name='relu_1')(encoder)
-encoder = layers.AveragePooling2D((2,2), name='pool_1')(encoder)
-encoder = layers.Conv2D(30, (3,3), strides=1, padding='same', name='conv2d_2')(encoder)
-encoder = layers.Activation('relu', name='relu_2')(encoder)
-encoder = layers.Flatten(name='flatten')(encoder)
-
-encoder_output = layers.Dense(80, activation='relu', name='latent')(encoder)
-
-encoder = tf.keras.models.Model(encoder_input, encoder_output)
-encoder.summary()
-
-
-# In[ ]:
-
-
-decoder = layers.Dense(9*7*30, name='dense')(encoder_output)
-decoder = layers.Reshape((9,7,30), name='reshape2')(decoder)
-decoder = layers.Activation('relu', name='relu_3')(decoder)
-decoder = layers.Conv2D(30, (3,3), strides=1, padding='same', name='conv2d_3')(decoder)
-decoder = layers.Activation('relu', name='relu_4')(decoder)
-decoder = layers.UpSampling2D((2,2), name='upsampling')(decoder)
-decoder = layers.Conv2D(20, (3,3), strides=1, padding='same', name='conv2d_4')(decoder)
-decoder = layers.Activation('relu', name='relu_5')(decoder)
-
-decoder_output = layers.Conv2D(1, (3,3), activation='relu', strides=1, padding='same', name='output')(decoder)
-
-
-# In[ ]:
-
-
-teacher = tf.keras.Model(encoder_input, decoder_output)
+teacher = TeacherAutoencoder((18, 14, 1)).get_model()
 teacher.summary()
 
 
@@ -437,7 +397,7 @@ teacher.compile(optimizer = keras.optimizers.Adam(learning_rate=0.001), loss = '
 
 
 history = teacher.fit(X_train, X_train,
-                      epochs = 1,
+                      epochs = 2,
                       validation_data = (X_val, X_val),
                       batch_size = 128)
 
