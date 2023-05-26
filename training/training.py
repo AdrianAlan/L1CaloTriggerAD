@@ -17,36 +17,31 @@ from tensorflow.keras import layers, models
 from sklearn.metrics import roc_curve, auc
 import qkeras
 from qkeras import *
-#import tensorflow_probability as tfp
-#import keras_tuner
-#from keras_tuner import Hyperband
 import joblib
 from models import TeacherAutoencoder
+from generator import RegionETGenerator
 
-# # data files
+datasets = [
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5']
 
-# All input files have data already sorted in Calo regions (i, j) ~ (18, 14)<br>
-# i = 0 -> 17 corresponds to GCT_Phi = 0 -> 17<br>
-# j = 0 -> 13 corresponds to RCT_Eta = 4 -> 17
+generator = RegionETGenerator()
+X_train, X_val, _ = generator.get_background(datasets)
+X_train = generator.get_generator(X_train, X_train, 128, True)
+X_val = generator.get_generator(X_val, X_val, 128)
 
-# In[ ]:
 
 
-X = np.concatenate((h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'))
-                  )
-
-X = np.reshape(X, (-1,18,14,1))
 
 X_A_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 X_B_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
@@ -68,7 +63,6 @@ X_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background
 X_D_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 X_EphC_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 
-print('X      shape: ' + str(X.shape))
 print('X_A_0    shape: ' + str(X_A_0.shape))
 print('X_B_0    shape: ' + str(X_B_0.shape))
 print('X_C_0    shape: ' + str(X_C_0.shape))
@@ -88,44 +82,6 @@ print('X_B_2    shape: ' + str(X_B_2.shape))
 print('X_C_2    shape: ' + str(X_C_2.shape))
 print('X_D_2    shape: ' + str(X_D_2.shape))
 print('X_EphC_2 shape: ' + str(X_EphC_2.shape))
-
-MC_files = []
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/TT.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5')
-    
-MC = []
-Acceptance_Flag = []
-Acceptance_Filter = []
-MC_flag = []
-for i in range(len(MC_files)):
-    MC.append(np.reshape(h5py.File(MC_files[i], 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1)))
-    MC_flag.append(np.reshape(h5py.File(MC_files[i], 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1)))
-    Acceptance_Flag.append(h5py.File(MC_files[i], 'r')['AcceptanceFlag'][:].astype('int32'))
-    Acceptance_Filter.append([])
-    for j in range(MC[i].shape[0]):
-        if Acceptance_Flag[i][j] == 1:
-            Acceptance_Filter[i].append(True)
-        else:
-            Acceptance_Filter[i].append(False)
-    MC_flag[i] = MC_flag[i][Acceptance_Filter[i]]
-    print('i = ' + str(i) + ': ' + str(MC_flag[i].shape) + ' / ' + str(MC[i].shape) + '; accepted ' + str(np.round(np.mean(Acceptance_Flag[i]), 4)))
-
-
-# In[ ]:
-
-
-train_ratio = 0.5
-val_ratio = 0.1
-test_ratio = 1 - train_ratio - val_ratio
-X_train_val, X_test = train_test_split(X, test_size = test_ratio, random_state = 42)
-X_train, X_val = train_test_split(X_train_val, test_size = val_ratio/(val_ratio + train_ratio), random_state = 42)
-print('X_train shape: ' + str(X_train.shape))
-print('X_val   shape: ' + str(X_val.shape))
-print('X_test  shape: ' + str(X_test.shape))
-del X_train_val
 
 
 # Take a look at some ZB statistics.
@@ -396,10 +352,12 @@ teacher.compile(optimizer = keras.optimizers.Adam(learning_rate=0.001), loss = '
 # In[ ]:
 
 
-history = teacher.fit(X_train, X_train,
+history = teacher.fit(X_train,
+                      steps_per_epoch=len(X_train),
                       epochs = 2,
-                      validation_data = (X_val, X_val),
-                      batch_size = 128)
+                      validation_data = X_val,
+                      validation_steps=len(X_val),
+                      verbose = 1)
 
 teacher.save('saved_models/teacher2023_aug1')
 

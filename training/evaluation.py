@@ -23,51 +23,38 @@ from qkeras import *
 import joblib
 
 from models import CicadaV1, CicadaV2
+from generator import RegionETGenerator
 
+tf.get_logger().setLevel('ERROR')
 
-# # Save/load trained models
+datasets = [
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5',
+   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5']
+signal_datasets = {
+   'H_ToLongLived': '/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5',
+   'SUEP': '/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5',
+ 'SUSYGGBBH': '/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5',
+ 'TT': '/eos/project/c/cicada-project/data/2023/Signal/TT.h5',
+ 'VBHFto2C': '/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5'}
 
-
-# In[ ]:
-
+generator = RegionETGenerator()
+X_train, X_val, X_test = generator.get_background(datasets)
+X_signal = generator.get_signal(signal_datasets)
 
 teacher = tf.keras.models.load_model('saved_models/teacher2023_aug1')
 teacher.summary()
 
-
-# In[ ]:
-
-
-tf.get_logger().setLevel('ERROR')
-#student = qkeras.utils.load_qmodel('saved_models/student2023_aug1_v1') # 2023 v1
-
-
-
 # # Loss distribution
-
-# In[ ]:
-train_ratio = 0.5
-val_ratio = 0.1
-test_ratio = 1 - train_ratio - val_ratio
-
-
-X = np.concatenate((h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'),
-                    h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'))
-                  )
-
-
-X = np.reshape(X, (-1,18,14,1))
-
 X_A_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 X_B_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 X_C_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
@@ -88,72 +75,30 @@ X_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background
 X_D_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 X_EphC_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 
-X_train_val, X_test = train_test_split(X, test_size = test_ratio, random_state = 42)
-X_train, X_val = train_test_split(X_train_val, test_size = val_ratio/(val_ratio + train_ratio), random_state = 42)
-
 X_train_predict_teacher = teacher.predict(X_train)
 X_val_predict_teacher = teacher.predict(X_val)
 X_test_predict_teacher = teacher.predict(X_test)
 
-
-MC_files = []
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/TT.h5')
-MC_files.append('/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5')
-
-MC = []
-Acceptance_Flag = []
-Acceptance_Filter = []
-MC_flag = []
-for i in range(len(MC_files)):
-    MC.append(np.reshape(h5py.File(MC_files[i], 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1)))
-    MC_flag.append(np.reshape(h5py.File(MC_files[i], 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1)))
-    Acceptance_Flag.append(h5py.File(MC_files[i], 'r')['AcceptanceFlag'][:].astype('int32'))
-    Acceptance_Filter.append([])
-    for j in range(MC[i].shape[0]):
-        if Acceptance_Flag[i][j] == 1:
-            Acceptance_Filter[i].append(True)
-        else:
-            Acceptance_Filter[i].append(False)
-    MC_flag[i] = MC_flag[i][Acceptance_Filter[i]]
-    print('i = ' + str(i) + ': ' + str(MC_flag[i].shape) + ' / ' + str(MC[i].shape) + '; accepted ' + str(np.round(np.mean(Acceptance_Flag[i]), 4)))
-
-
-
-MC_predict_teacher = []
-MC_flag_predict_teacher = []
-for i in range(len(MC)):
-    MC_predict_teacher.append(teacher.predict(MC[i]))
-    MC_flag_predict_teacher.append(teacher.predict(MC_flag[i]))
-
-
-# In[ ]:
-
-
 def loss(y_true, y_pred, choice):
     if choice == 'mse':
-        loss = np.mean((y_true - y_pred)**2, axis = (1,2,3))
-        return loss
+        mse = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.NONE)
+        loss = mse(y_true, y_pred).numpy()
+    return np.mean(loss, axis=(1, 2))
 
-
-# In[ ]:
-
-
-X_train_loss_teacher = loss(X_train, X_train_predict_teacher, 'mse')
-X_val_loss_teacher = loss(X_val, X_val_predict_teacher, 'mse')
-X_test_loss_teacher = loss(X_test, X_test_predict_teacher, 'mse')
-
-MC_loss_teacher = []
 MC_flag_loss_teacher = []
-for i in range(len(MC)):
-    MC_loss_teacher.append(loss(MC[i], MC_predict_teacher[i], 'mse'))
-    MC_flag_loss_teacher.append(loss(MC_flag[i], MC_flag_predict_teacher[i], 'mse'))
+MC_flag_predict_teacher = []
+for name, data in X_signal.items():
+    y_pred = teacher.predict(data)
+    MC_flag_predict_teacher.append(y_pred)
+    MC_flag_loss_teacher.append(loss(data, y_pred, 'mse'))
 
-
-# In[ ]:
-
+X_train_loss_teacher = loss(
+    X_train,
+    X_train_predict_teacher, 'mse')
+X_val_loss_teacher = loss(X_val,
+   X_val_predict_teacher, 'mse')
+X_test_loss_teacher = loss(X_test,
+   X_test_predict_teacher, 'mse')
 
 nbins = 80
 rmin = 0
@@ -173,9 +118,6 @@ plt.close()
 
 # # Comparison between original and reconstructed inputs
 
-# In[ ]:
-
-
 #show_ZB = True
 show_ZB = False
 n = 3
@@ -184,12 +126,12 @@ for i in range(280,300):
     if show_ZB == True:
         print('ZB test\nloss = ' + str(X_test_loss_teacher[i]))
     else:
-        print(str(MC_files[n]) + '\nloss = ' + str(MC_flag_loss_teacher[n][i]))
+        print(str('/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5') + '\nloss = ' + str(MC_flag_loss_teacher[n][i]))
     ax = plt.subplot(3, 3, 1)
     if show_ZB == True:
         ax = sns.heatmap(X_test[i].reshape(18, 14), vmin = 0, vmax = X_test[i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     else:
-        ax = sns.heatmap(MC_flag[n][i].reshape(18, 14), vmin = 0, vmax = MC_flag[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
+        ax = sns.heatmap(MC_flag_predict_teacher[n][i].reshape(18, 14), vmin = 0, vmax = MC_flag_predict_teacher[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     ax.set_title('Original')
@@ -198,7 +140,7 @@ for i in range(280,300):
     if show_ZB == True:
         ax = sns.heatmap(X_test_predict_teacher[i].reshape(18, 14), vmin = 0, vmax = X_test[i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     else:
-        ax = sns.heatmap(MC_flag_predict_teacher[n][i].reshape(18, 14), vmin = 0, vmax = MC_flag[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
+        ax = sns.heatmap(MC_flag_predict_teacher[n][i].reshape(18, 14), vmin = 0, vmax = MC_flag_predict_teacher[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     ax.set_title('Reconstructed')
@@ -207,7 +149,7 @@ for i in range(280,300):
     if show_ZB == True:
         ax = sns.heatmap(np.absolute(X_test_predict_teacher[i].reshape(18, 14) - X_test[i].reshape(18, 14)), vmin = 0, vmax = X_test[i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     else:
-        ax = sns.heatmap(np.absolute(MC_flag_predict_teacher[n][i].reshape(18, 14) - MC_flag[n][i].reshape(18, 14)), vmin = 0, vmax = MC_flag[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
+        ax = sns.heatmap(np.absolute(MC_flag_predict_teacher[n][i].reshape(18, 14) - MC_flag_predict_teacher[n][i].reshape(18, 14)), vmin = 0, vmax = MC_flag_predict_teacher[n][i].max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     ax.set_title('abs(original-reconstructed)')
@@ -222,10 +164,21 @@ cicada_v1.compile(optimizer = 'adam', loss = 'mse')
 cicada_v2.compile(optimizer = 'adam', loss = 'mse')
 
 student = cicada_v2
-history = student.fit(X_train.reshape((-1,252,1)), X_train_loss_teacher,
-                      epochs = 2,
-                      validation_data = (X_val.reshape((-1,252,1)), X_val_loss_teacher),
-                      batch_size = 1024)
+X_train_gen = generator.get_generator(
+  X_train.reshape((-1, 252, 1)),
+  X_train_loss_teacher, 128, True
+)
+X_val_gen = generator.get_generator(
+  X_val.reshape((-1, 252, 1)),
+  X_val_loss_teacher, 128, True
+)
+history = student.fit(
+  X_train_gen,
+  steps_per_epoch=len(X_train),
+  epochs = 2,
+  validation_data = X_val_gen,
+  validation_steps=len(X_val),
+  verbose = 1)
 
 student.save('saved_models/student2023_aug1_v2/')
 student = qkeras.utils.load_qmodel('saved_models/student2023_aug1_v2') # 2023 v2
@@ -254,9 +207,9 @@ X_val_loss_student = student.predict(X_val.reshape((-1,252,1)))
 X_test_loss_student = student.predict(X_test.reshape((-1,252,1)))
 MC_loss_student = []
 MC_flag_loss_student = []
-for i in range(len(MC)):
-    MC_loss_student.append(student.predict(MC[i].reshape((-1,252,1))))
-    MC_flag_loss_student.append(student.predict(MC_flag[i].reshape((-1,252,1))))
+for name, data in X_signal.items():
+    MC_loss_student.append(student.predict(data.reshape((-1,252,1))))
+    MC_flag_loss_student.append(student.predict(data.reshape((-1,252,1))))
 
 
 # In[ ]:
@@ -345,16 +298,11 @@ plt.close()
 # In[ ]:
 
 
-signal_acceptance_flag = True
-
 #Assign labels for various signals (y = 1) and backgrounds (y = 0)
 Y_bkg = np.zeros((X_test.shape[0], 1))
 Y_sig = []
-for i in range(len(MC)):
-    if signal_acceptance_flag == False:
-        Y_sig.append(np.ones((MC[i].shape[0], 1)))
-    else:
-        Y_sig.append(np.ones((MC_flag[i].shape[0], 1)))
+for name, data in X_signal.items():
+    Y_sig.append(np.ones((data.shape[0], 1)))
 
 #Concatenate datasets to make ROC curves
 
@@ -364,15 +312,12 @@ Y_true = []
 Y_teacher = []
 Y_student = []
 
-for i in range(len(MC)):
-    if signal_acceptance_flag == False:
-        Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
-        Y_teacher.append(np.concatenate((MC_loss_teacher[i], X_test_loss_teacher)))
-        Y_student.append(np.concatenate((MC_loss_student[i], X_test_loss_student)))
-    else:
-        Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
-        Y_teacher.append(np.concatenate((MC_flag_loss_teacher[i], X_test_loss_teacher)))
-        Y_student.append(np.concatenate((MC_flag_loss_student[i], X_test_loss_student)))
+signal_acceptance_flag = True
+
+for i, (name, data) in enumerate(X_signal.items()):
+    Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
+    Y_teacher.append(np.concatenate((MC_flag_loss_teacher[i], X_test_loss_teacher)))
+    Y_student.append(np.concatenate((MC_flag_loss_student[i], X_test_loss_student)))
 
 
 # ### Teacher model ROC
@@ -386,7 +331,7 @@ fpr_teacher = []
 tpr_teacher = []
 thresholds_teacher = []
 roc_auc_teacher = []
-for i in range(len(MC)):
+for i, (name, data) in enumerate(X_signal.items()):
     fpr_teacher.append(np.empty((Y_true[i].shape[0],1)))
     tpr_teacher.append(np.empty((Y_true[i].shape[0],1)))
     thresholds_teacher.append(np.empty((Y_true[i].shape[0],1)))
@@ -430,7 +375,7 @@ tpr_student = []
 thresholds_student = []
 roc_auc_student = []
 
-for i in range(len(MC)):
+for i, (name, data) in enumerate(X_signal.items()):
     fpr_student.append(np.empty((Y_true[i].shape[0],1)))
     tpr_student.append(np.empty((Y_true[i].shape[0],1)))
     thresholds_student.append(np.empty((Y_true[i].shape[0],1)))
@@ -467,26 +412,18 @@ plt.close()
 # In[ ]:
 
 
-signal_acceptance_flag = True
 
 Y_bkg = np.zeros((X_test.shape[0], 1))
 Y_sig = []
-for i in range(len(MC)):
-    if signal_acceptance_flag == False:
-        Y_sig.append(np.ones((MC[i].shape[0], 1)))
-    else:
-        Y_sig.append(np.ones((MC_flag[i].shape[0], 1)))
+for i in signal_datasets:
+    Y_sig.append(np.ones((X_signal[i].shape[0], 1)))
         
 Y_true = []
 Y_student = []
 
-for i in range(len(MC)):
-    if signal_acceptance_flag == False:
-        Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
-        Y_student.append(np.concatenate((MC_loss_student[i], X_test_loss_student)))
-    else:
-        Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
-        Y_student.append(np.concatenate((MC_flag_loss_student[i], X_test_loss_student)))
+for i in range(len(signal_datasets)):
+    Y_true.append(np.concatenate((Y_sig[i], Y_bkg)))
+    Y_student.append(np.concatenate((MC_flag_loss_student[i], X_test_loss_student)))
 
 def kfold(y, k):
     N=y.shape[0]
@@ -499,10 +436,7 @@ def kfold(y, k):
 kf=10
 X_test_loss_model = X_test_loss_student
 Y_model = Y_student
-if signal_acceptance_flag == False:
-    MC_loss_model = MC_loss_student
-else:
-    MC_loss_model = MC_flag_loss_student
+MC_loss_model = MC_flag_loss_student
 
 X_test_loss_model_kf=kfold(X_test_loss_model,kf)
 Y_bkg_kf=kfold(Y_bkg,kf)
@@ -515,7 +449,7 @@ tpr = []
 thresholds = []
 roc_auc = []
 
-for j in range(len(MC)):
+for j in range(len(signal_datasets)):
     fpr.append(np.empty((Y_true[j].shape[0],1)))
     tpr.append(np.empty((Y_true[j].shape[0],1)))
     thresholds.append(np.empty((Y_true[j].shape[0],1)))
