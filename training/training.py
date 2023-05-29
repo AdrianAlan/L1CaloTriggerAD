@@ -8,8 +8,6 @@ import h5py
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
@@ -20,6 +18,9 @@ from qkeras import *
 import joblib
 from models import TeacherAutoencoder
 from generator import RegionETGenerator
+from plotting import Draw
+
+draw = Draw("plots")
 
 datasets = [
    '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5',
@@ -148,174 +149,27 @@ ZB_C_2_mean = np.mean(ZB_C_2, axis = 0)
 ZB_D_2_mean = np.mean(ZB_D_2, axis = 0)
 EZB_C_2_mean = np.mean(EZB_C_2, axis = 0)
 
+draw.plot_regional_deposits(ZB_A_0_mean.reshape(18, 14), "ZB2023RunA_0")
+draw.plot_regional_deposits(ZB_B_0_mean.reshape(18, 14), "ZB2023RunB_0")
+draw.plot_regional_deposits(ZB_C_0_mean.reshape(18, 14), "ZB2023RunC_0")
+draw.plot_regional_deposits(ZB_D_0_mean.reshape(18, 14), "ZB2023RunD_0")
+draw.plot_regional_deposits(EZB_C_0_mean.reshape(18, 14), "EphemeralZB2023RunC_0")
+draw.plot_regional_deposits(ZB_A_1_mean.reshape(18, 14), "ZB2023RunA_1")
+draw.plot_regional_deposits(ZB_B_1_mean.reshape(18, 14), "ZB2023RunB_1")
+draw.plot_regional_deposits(ZB_C_1_mean.reshape(18, 14), "ZB2023RunC_1")
+draw.plot_regional_deposits(ZB_D_1_mean.reshape(18, 14), "ZB2023RunD_1")
+draw.plot_regional_deposits(EZB_C_1_mean.reshape(18, 14), "EphemeralZB2023RunC_1")
+draw.plot_regional_deposits(ZB_A_2_mean.reshape(18, 14), "ZB2023RunA_2")
+draw.plot_regional_deposits(ZB_B_2_mean.reshape(18, 14), "ZB2023RunB_2")
+draw.plot_regional_deposits(ZB_C_2_mean.reshape(18, 14), "ZB2023RunC_2")
+draw.plot_regional_deposits(ZB_D_2_mean.reshape(18, 14), "ZB2023RunD_2")
+draw.plot_regional_deposits(EZB_C_2_mean.reshape(18, 14), "EphemeralZB2023RunC_2")
 
-
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_A_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_0_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunA_0)')
-plt.savefig('Mean Et (ZB2023RunA_0).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_B_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_0_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunB_0)')
-plt.savefig('Mean Et (ZB2023RunB_0).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_C_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_0_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunC_0)')
-plt.savefig('Mean Et (ZB2023RunC_0).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_D_0_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_0_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunD_0)')
-plt.savefig('Mean Et (ZB2023RunD_0).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(EZB_C_0_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_0_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (EphemeralZB2023RunC_0)')
-plt.savefig('Mean Et (EphemeralZB2023RunC_0).png')
-plt.close()
-
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_A_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_1_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunA_1)')
-plt.savefig('Mean Et (ZB2023RunA_1).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_B_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_1_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunB_1)')
-plt.savefig('Mean Et (ZB2023RunB_1).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_C_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_1_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunC_1)')
-plt.savefig('Mean Et (ZB2023RunC_1).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_D_1_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_1_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunD_1)')
-plt.savefig('Mean Et (ZB2023RunD_1).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(EZB_C_1_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_1_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (EphemeralZB2023RunC_1)')
-plt.savefig('Mean Et (EphemeralZB2023RunC_1).png')
-plt.close()
-
-
-
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_A_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_A_2_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunA_2)')
-plt.savefig('Mean Et (ZB2023RunA_2).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_B_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_B_2_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunB_2)')
-plt.savefig('Mean Et (ZB2023RunB_2).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_C_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_C_2_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunC_2)')
-plt.savefig('Mean Et (ZB2023RunC_2).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(ZB_D_2_mean.reshape(18, 14), vmin = 0, vmax = ZB_D_2_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (ZB2023RunD_2)')
-plt.savefig('Mean Et (ZB2023RunD_2).png')
-plt.close()
-
-fig, ax = plt.subplots(figsize = (10,10))
-ax = plt.subplot(2, 2, 2)
-ax = sns.heatmap(EZB_C_2_mean.reshape(18, 14), vmin = 0, vmax = EZB_C_2_mean.max(), cmap = "Purples", cbar_kws = {'label': 'ET (GeV)'})
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
-ax.set_title('Mean Et (EphemeralZB2023RunC_2)')
-plt.savefig('Mean Et (EphemeralZB2023RunC_2).png')
-plt.close()
-
-# In[ ]:
-
-
-plt.hist(ZB_A_0.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunA_0', log = True, histtype='step')
-plt.hist(ZB_B_0.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunB_0', log = True, histtype='step')
-plt.hist(ZB_C_0.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunC_0', log = True, histtype='step')
-plt.hist(ZB_D_0.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunD_0', log = True, histtype='step')
-plt.hist(EZB_C_0.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023EphemeralRunC_0', log = True, histtype='step')
-
-
-plt.hist(ZB_A_1.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunA_1', log = True, histtype='step')
-plt.hist(ZB_B_1.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunB_1', log = True, histtype='step')
-plt.hist(ZB_C_1.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunC_1', log = True, histtype='step')
-plt.hist(ZB_D_1.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunD_1', log = True, histtype='step')
-plt.hist(EZB_C_1.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023EphemeralRunC_1', log = True, histtype='step')
-
-plt.hist(ZB_A_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunA_2', log = True, histtype='step')
-plt.hist(ZB_B_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunB_2', log = True, histtype='step')
-plt.hist(ZB_C_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunC_2', log = True, histtype='step')
-plt.hist(ZB_D_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023RunD_2', log = True, histtype='step')
-plt.hist(EZB_C_2.reshape((-1)), bins = 100, range=(0,1024), density=1, label='2023EphemeralRunC_2', log = True, histtype='step')
-
-plt.xlabel("ZB Et")
-plt.legend(loc='best')
-plt.savefig("ZB Et.png")
-plt.close()
+draw.plot_deposits_distribution(
+  [ZB_A_0, ZB_B_0, ZB_C_0, ZB_D_0, EZB_C_0, ZB_A_1, ZB_B_1, ZB_C_1, ZB_D_1, EZB_C_1, ZB_A_1, ZB_B_1, ZB_C_1, ZB_D_1, EZB_C_1],
+  ["2023RunA_0", "2023RunB_0", "2023RunC_0", "2023RunD_0", "2023EphemeralRunC_0", "2023RunA_1", "2023RunB_1", "2023RunC_1", "2023RunD_1", "2023EphemeralRunC_1", "2023RunA_2", "2023RunB_2", "2023RunC_2", "2023RunD_2", "2023EphemeralRunC_2"],
+   name="Zero Bias Energy Distribution"
+)
 
 print('Mean ZB2023A_0 pT = ' + str(np.mean(ZB_A_0.reshape(-1))))
 print('Mean ZB2023B_0 pT = ' + str(np.mean(ZB_B_0.reshape(-1))))
@@ -361,20 +215,4 @@ history = teacher.fit(X_train,
 
 teacher.save('saved_models/teacher2023_aug1')
 
-# In[ ]:
-
-
-plt.figure(figsize = (15,10))
-axes = plt.subplot(2, 2, 1)
-axes.plot(history.history['loss'], label = 'train loss')
-axes.plot(history.history['val_loss'], label = 'val loss')
-axes.legend(loc = "upper right")
-axes.set_xlabel('Epoch')
-axes.set_ylabel('Loss')
-plt.savefig('train-val.png')
-plt.close()
-
-
-
-
-
+draw.plot_loss_history(history.history['loss'], history.history['val_loss'], 'teacher-training-history')
