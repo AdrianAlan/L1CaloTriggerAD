@@ -19,177 +19,35 @@ import joblib
 from models import TeacherAutoencoder
 from generator import RegionETGenerator
 from plotting import Draw
+import yaml
 
 draw = Draw("plots")
+config = yaml.safe_load(open('config.yml'))
 
-datasets = [
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5']
+datasets = [i['path'] for i in config['background'] if i['use']]
+datasets = [path for paths in datasets for path in paths]
 
 generator = RegionETGenerator()
-X_train, X_val, _ = generator.get_background(datasets)
+X_train, X_val, _ = generator.get_background_split(datasets)
 X_train = generator.get_generator(X_train, X_train, 128, True)
 X_val = generator.get_generator(X_val, X_val, 128)
 
+# Dataset profiling
+deposits, labels = [], []
+for dataset in config['background']:
+    name = dataset['name']
+    X = generator.get_background(dataset['path'])
+    X_mean = np.mean(X, axis = 0)
+    pT = np.mean(X_mean)
+    print(f'{name} shape: {X.shape}')
+    print(f'Mean {name} pT is {pT}')
+    draw.plot_regional_deposits(X_mean.reshape(18, 14), f'{name} Mean Deposits')
+    deposits.append(X)
+    labels.append(name)
 
+draw.plot_deposits_distribution(deposits, labels, name="Zero Bias Energy Distribution")
 
-
-X_A_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-X_A_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-X_A_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-print('X_A_0    shape: ' + str(X_A_0.shape))
-print('X_B_0    shape: ' + str(X_B_0.shape))
-print('X_C_0    shape: ' + str(X_C_0.shape))
-print('X_D_0    shape: ' + str(X_D_0.shape))
-print('X_EphC_0 shape: ' + str(X_EphC_0.shape))
-
-
-print('X_A_1    shape: ' + str(X_A_1.shape))
-print('X_B_1    shape: ' + str(X_B_1.shape))
-print('X_C_1    shape: ' + str(X_C_1.shape))
-print('X_D_1    shape: ' + str(X_D_1.shape))
-print('X_EphC_1 shape: ' + str(X_EphC_1.shape))
-
-
-print('X_A_2    shape: ' + str(X_A_2.shape))
-print('X_B_2    shape: ' + str(X_B_2.shape))
-print('X_C_2    shape: ' + str(X_C_2.shape))
-print('X_D_2    shape: ' + str(X_D_2.shape))
-print('X_EphC_2 shape: ' + str(X_EphC_2.shape))
-
-
-# Take a look at some ZB statistics.
-
-# In[ ]:
-
-
-ZB_A_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_B_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_C_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_D_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-EZB_C_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-ZB_A_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_B_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_C_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_D_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-EZB_C_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-ZB_A_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_B_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-ZB_D_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-EZB_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-print('ZeroBias2023A_0   shape: ' + str(ZB_A_0.shape))
-print('ZeroBias2023B_0   shape: ' + str(ZB_B_0.shape))
-print('ZeroBias2023C_0   shape: ' + str(ZB_C_0.shape))
-print('ZeroBias2023D_0   shape: ' + str(ZB_D_0.shape))
-print('EZeroBias2023C_0  shape: ' + str(EZB_C_0.shape))
-
-
-print('ZeroBias2023A_1   shape: ' + str(ZB_A_1.shape))
-print('ZeroBias2023B_1   shape: ' + str(ZB_B_1.shape))
-print('ZeroBias2023C_1   shape: ' + str(ZB_C_1.shape))
-print('ZeroBias2023D_1   shape: ' + str(ZB_D_1.shape))
-print('EZeroBias2023C_1  shape: ' + str(EZB_C_1.shape))
-
-print('ZeroBias2023A_2   shape: ' + str(ZB_A_2.shape))
-print('ZeroBias2023B_2   shape: ' + str(ZB_B_2.shape))
-print('ZeroBias2023C_2   shape: ' + str(ZB_C_2.shape))
-print('ZeroBias2023D_2   shape: ' + str(ZB_D_2.shape))
-print('EZeroBias2023C_2  shape: ' + str(EZB_C_2.shape))
-
-ZB_A_0_mean = np.mean(ZB_A_0, axis = 0)
-ZB_B_0_mean = np.mean(ZB_B_0, axis = 0)
-ZB_C_0_mean = np.mean(ZB_C_0, axis = 0)
-ZB_D_0_mean = np.mean(ZB_D_0, axis = 0)
-EZB_C_0_mean = np.mean(EZB_C_0, axis = 0)
-
-
-ZB_A_1_mean = np.mean(ZB_A_1, axis = 0)
-ZB_B_1_mean = np.mean(ZB_B_1, axis = 0)
-ZB_C_1_mean = np.mean(ZB_C_1, axis = 0)
-ZB_D_1_mean = np.mean(ZB_D_1, axis = 0)
-EZB_C_1_mean = np.mean(EZB_C_1, axis = 0)
-
-
-ZB_A_2_mean = np.mean(ZB_A_2, axis = 0)
-ZB_B_2_mean = np.mean(ZB_B_2, axis = 0)
-ZB_C_2_mean = np.mean(ZB_C_2, axis = 0)
-ZB_D_2_mean = np.mean(ZB_D_2, axis = 0)
-EZB_C_2_mean = np.mean(EZB_C_2, axis = 0)
-
-draw.plot_regional_deposits(ZB_A_0_mean.reshape(18, 14), "ZB2023RunA_0")
-draw.plot_regional_deposits(ZB_B_0_mean.reshape(18, 14), "ZB2023RunB_0")
-draw.plot_regional_deposits(ZB_C_0_mean.reshape(18, 14), "ZB2023RunC_0")
-draw.plot_regional_deposits(ZB_D_0_mean.reshape(18, 14), "ZB2023RunD_0")
-draw.plot_regional_deposits(EZB_C_0_mean.reshape(18, 14), "EphemeralZB2023RunC_0")
-draw.plot_regional_deposits(ZB_A_1_mean.reshape(18, 14), "ZB2023RunA_1")
-draw.plot_regional_deposits(ZB_B_1_mean.reshape(18, 14), "ZB2023RunB_1")
-draw.plot_regional_deposits(ZB_C_1_mean.reshape(18, 14), "ZB2023RunC_1")
-draw.plot_regional_deposits(ZB_D_1_mean.reshape(18, 14), "ZB2023RunD_1")
-draw.plot_regional_deposits(EZB_C_1_mean.reshape(18, 14), "EphemeralZB2023RunC_1")
-draw.plot_regional_deposits(ZB_A_2_mean.reshape(18, 14), "ZB2023RunA_2")
-draw.plot_regional_deposits(ZB_B_2_mean.reshape(18, 14), "ZB2023RunB_2")
-draw.plot_regional_deposits(ZB_C_2_mean.reshape(18, 14), "ZB2023RunC_2")
-draw.plot_regional_deposits(ZB_D_2_mean.reshape(18, 14), "ZB2023RunD_2")
-draw.plot_regional_deposits(EZB_C_2_mean.reshape(18, 14), "EphemeralZB2023RunC_2")
-
-draw.plot_deposits_distribution(
-  [ZB_A_0, ZB_B_0, ZB_C_0, ZB_D_0, EZB_C_0, ZB_A_1, ZB_B_1, ZB_C_1, ZB_D_1, EZB_C_1, ZB_A_1, ZB_B_1, ZB_C_1, ZB_D_1, EZB_C_1],
-  ["2023RunA_0", "2023RunB_0", "2023RunC_0", "2023RunD_0", "2023EphemeralRunC_0", "2023RunA_1", "2023RunB_1", "2023RunC_1", "2023RunD_1", "2023EphemeralRunC_1", "2023RunA_2", "2023RunB_2", "2023RunC_2", "2023RunD_2", "2023EphemeralRunC_2"],
-   name="Zero Bias Energy Distribution"
-)
-
-print('Mean ZB2023A_0 pT = ' + str(np.mean(ZB_A_0.reshape(-1))))
-print('Mean ZB2023B_0 pT = ' + str(np.mean(ZB_B_0.reshape(-1))))
-print('Mean ZB2023C_0 pT = ' + str(np.mean(ZB_C_0.reshape(-1))))
-print('Mean ZB2023D_0 pT = ' + str(np.mean(ZB_D_0.reshape(-1))))
-print('Mean EphemeralZB2023C_0 pT = ' + str(np.mean(EZB_C_0.reshape(-1))))
-
-
-print('Mean ZB2023A_1 pT = ' + str(np.mean(ZB_A_1.reshape(-1))))
-print('Mean ZB2023B_1 pT = ' + str(np.mean(ZB_B_1.reshape(-1))))
-print('Mean ZB2023C_1 pT = ' + str(np.mean(ZB_C_1.reshape(-1))))
-print('Mean ZB2023D_1 pT = ' + str(np.mean(ZB_D_1.reshape(-1))))
-print('Mean EphemeralZB2023C_1 pT = ' + str(np.mean(EZB_C_1.reshape(-1))))
-
-
-print('Mean ZB2023A_2 pT = ' + str(np.mean(ZB_A_2.reshape(-1))))
-print('Mean ZB2023B_2 pT = ' + str(np.mean(ZB_B_2.reshape(-1))))
-print('Mean ZB2023C_2 pT = ' + str(np.mean(ZB_C_2.reshape(-1))))
-print('Mean ZB2023D_2 pT = ' + str(np.mean(ZB_D_2.reshape(-1))))
-print('Mean EphemeralZB2023C_2 pT = ' + str(np.mean(EZB_C_2.reshape(-1))))
+# Model training
 
 teacher = TeacherAutoencoder((18, 14, 1)).get_model()
 teacher.summary()

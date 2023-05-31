@@ -27,37 +27,43 @@ class RegionETGenerator:
             .prefetch(data.AUTOTUNE)
         )
 
-    def get_background(
-        self, datasets_paths: List[Path], batch_size=128
-    ) -> (np.array, np.array, np.array):
+    def get_background(self, datasets_paths: List[Path]) -> np.array:
         X = []
         for dataset_path in datasets_paths:
             X.append(h5py.File(dataset_path, "r")["CaloRegions"][:].astype("float32"))
         X = np.concatenate(X)
         X = np.reshape(X, (-1, 18, 14, 1))
+        return X
 
+    def get_background_split(
+        self, datasets_paths: List[Path]
+    ) -> (np.array, np.array, np.array):
+        X = self.get_background(datasets_paths)
         X_train, X_test = train_test_split(
             X, test_size=self.test_size, random_state=self.random_state
         )
         X_train, X_val = train_test_split(
             X_train,
             test_size=self.val_size / (self.val_size + self.train_size),
-            random_state=42,
+            random_state=self.random_state,
         )
-
         return X_train, X_val, X_test
 
-    def get_signal(
-        self, dataset_paths: dict[str, Path], filter_acceptance=True
-    ) -> dict[str, np.array]:
+    def get_signal(self, datasets: dict, filter_acceptance=True) -> dict[str, np.array]:
         signals = {}
-        for signal_name, dataset_path in dataset_paths.items():
-            X = h5py.File(dataset_path, "r")["CaloRegions"][:].astype("float32")
-            X = np.reshape(X, (-1, 18, 14, 1))
-            if filter_acceptance:
-                flags = h5py.File(dataset_path, "r")["AcceptanceFlag"][:].astype("bool")
-                fraction = np.round(100 * sum(flags) / len(flags), 2)
-                print(f"Accepted {signal_name} events: {fraction}%")
-                X = X[flags]
-            signals[signal_name] = X
+        for dataset in datasets:
+            if not dataset['use']:
+                continue
+            signal_name = dataset["name"]
+            for dataset_path in dataset["path"]:
+                X = h5py.File(dataset_path, "r")["CaloRegions"][:].astype("float32")
+                X = np.reshape(X, (-1, 18, 14, 1))
+                if filter_acceptance:
+                    flags = h5py.File(dataset_path, "r")["AcceptanceFlag"][:].astype(
+                        "bool"
+                    )
+                    fraction = np.round(100 * sum(flags) / len(flags), 2)
+                    print(f"Accepted {signal_name} events: {fraction}%")
+                    X = X[flags]
+                signals[signal_name] = X
         return signals

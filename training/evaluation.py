@@ -21,62 +21,26 @@ from qkeras import *
 #import keras_tuner
 #from keras_tuner import Hyperband
 import joblib
+import yaml
 
 from models import CicadaV1, CicadaV2
 from generator import RegionETGenerator
 from plotting import Draw
  
-draw = Draw("plots")
-
 tf.get_logger().setLevel('ERROR')
 
-datasets = [
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5',
-   '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5']
-signal_datasets = {
-   'H_ToLongLived': '/eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5',
-   'SUEP': '/eos/project/c/cicada-project/data/2023/Signal/SUEP.h5',
- 'SUSYGGBBH': '/eos/project/c/cicada-project/data/2023/Signal/SUSYGGBBH.h5',
- 'TT': '/eos/project/c/cicada-project/data/2023/Signal/TT.h5',
- 'VBHFto2C': '/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5'}
+draw = Draw("plots")
+
+config = yaml.safe_load(open('config.yml'))
+datasets = [i['path'] for i in config['background'] if i['use']]
+datasets = [path for paths in datasets for path in paths]
 
 generator = RegionETGenerator()
-X_train, X_val, X_test = generator.get_background(datasets)
-X_signal = generator.get_signal(signal_datasets)
+X_train, X_val, X_test = generator.get_background_split(datasets)
+X_signal = generator.get_signal(config['signal'])
 
 teacher = tf.keras.models.load_model('saved_models/teacher2023_aug1')
 teacher.summary()
-
-# # Loss distribution
-X_A_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_0 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-X_A_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_1 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-
-
-X_A_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_B_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_C_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_D_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
-X_EphC_2 = np.reshape(h5py.File('/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5', 'r')['CaloRegions'][:].astype('float32'), (-1,18,14,1))
 
 X_train_predict_teacher = teacher.predict(X_train)
 X_val_predict_teacher = teacher.predict(X_val)
@@ -144,7 +108,7 @@ X_train_gen = generator.get_generator(
 )
 X_val_gen = generator.get_generator(
   X_val.reshape((-1, 252, 1)),
-  X_val_loss_teacher, 128, True
+  X_val_loss_teacher, 128, False
 )
 history = student.fit(X_train_gen,
   steps_per_epoch=len(X_train_gen),
@@ -189,62 +153,13 @@ labels = [
 draw.plot_anomaly_score_distribution(scores, labels, "anomaly-score-student")
 
 
-# In[ ]:
-
-
-X_test_A_0_loss_student = student.predict(X_A_0.reshape((-1,252,1)))
-X_test_B_0_loss_student = student.predict(X_B_0.reshape((-1,252,1)))
-X_test_C_0_loss_student = student.predict(X_C_0.reshape((-1,252,1)))
-X_test_D_0_loss_student = student.predict(X_D_0.reshape((-1,252,1)))
-X_test_EphC_0_loss_student = student.predict(X_EphC_0.reshape((-1,252,1)))
-
-
-X_test_A_1_loss_student = student.predict(X_A_1.reshape((-1,252,1)))
-X_test_B_1_loss_student = student.predict(X_B_1.reshape((-1,252,1)))
-X_test_C_1_loss_student = student.predict(X_C_1.reshape((-1,252,1)))
-X_test_D_1_loss_student = student.predict(X_D_1.reshape((-1,252,1)))
-X_test_EphC_1_loss_student = student.predict(X_EphC_1.reshape((-1,252,1)))
-
-X_test_A_2_loss_student = student.predict(X_A_2.reshape((-1,252,1)))
-X_test_B_2_loss_student = student.predict(X_B_2.reshape((-1,252,1)))
-X_test_C_2_loss_student = student.predict(X_C_2.reshape((-1,252,1)))
-X_test_D_2_loss_student = student.predict(X_D_2.reshape((-1,252,1)))
-X_test_EphC_2_loss_student = student.predict(X_EphC_2.reshape((-1,252,1)))
-
-
-scores = [
-X_test_A_0_loss_student,
-X_test_B_0_loss_student,
-X_test_C_0_loss_student,
-X_test_D_0_loss_student,
-X_test_EphC_0_loss_student,
-X_test_A_1_loss_student,
-X_test_B_1_loss_student,
-X_test_C_1_loss_student,
-X_test_D_1_loss_student,
-X_test_EphC_1_loss_student,
-X_test_A_2_loss_student,
-X_test_B_2_loss_student,
-X_test_C_2_loss_student,
-X_test_D_2_loss_student,
-X_test_EphC_2_loss_student]
-
-labels = [
-'ZB23A_0'
-'ZB23B_0'
-'ZB23C_0'
-'ZB23D_0'
-'EZB23C_0'
-'ZB23A_1'
-'ZB23B_1'
-'ZB23C_1'
-'ZB23D_1'
-'EZB23C_1'
-'ZB23A_2'
-'ZB23B_2'
-'ZB23C_2'
-'ZB23D_2'
-'EZB23C_2']
+scores, labels = [], []
+for dataset in config['background']:
+    name = dataset['name']
+    X = generator.get_background(dataset['path'])
+    y_pred = student.predict(X.reshape((-1,252,1)))
+    scores.append(y_pred)
+    labels.append(name)
 draw.plot_anomaly_score_distribution(scores, labels, "anomaly-score-student-background")
 
 #Assign labels for various signals (y = 1) and backgrounds (y = 0)
