@@ -117,7 +117,7 @@ class Draw:
             plt.hist(
                 score.reshape((-1)),
                 bins=100,
-                range=(0, 128),
+                range=(0, 256),
                 density=1,
                 label=label,
                 log=True,
