@@ -31,7 +31,9 @@ class Draw:
         )
         plt.close()
 
-    def plot_regional_deposits(self, deposits: np.array, name: str) -> None:
+    def plot_regional_deposits(
+        self, deposits: np.array, mean: float, name: str
+    ) -> None:
         plt.figure(figsize=(7, 9))
         im = plt.imshow(
             deposits.reshape(18, 14), vmin=0, vmax=deposits.max(), cmap="Purples"
@@ -40,9 +42,10 @@ class Draw:
         cbar = ax.figure.colorbar(im, ax=ax)
         cbar.ax.set_ylabel(r"E$_T$ (GeV)", rotation=-90, va="bottom")
         plt.axis("off")
-        plt.title(rf"Mean E$_T$ ({name})")
+        plt.title(rf"Mean E$_T$ {mean: .2f} ({name})")
         plt.savefig(
-            f"{self.output_dir}/{self._parse_name(name)}.png", bbox_inches="tight"
+            f"{self.output_dir}/mean-deposits-{self._parse_name(name)}.png",
+            bbox_inches="tight",
         )
         plt.close()
 

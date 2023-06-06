@@ -19,25 +19,6 @@ def loss(y_true, y_pred):
     return np.mean(loss, axis=(1, 2))
 
 
-def dataset_profiling(datasets: dict) -> None:
-    generator = RegionETGenerator()
-    draw = Draw("plots")
-    deposits, labels = [], []
-    for dataset in datasets:
-        name = dataset["name"]
-        X = generator.get_background(dataset["path"])
-        X_mean = np.mean(X, axis=0)
-        pT = np.mean(X_mean)
-        print(f"{name} shape: {X.shape}")
-        print(f"Mean {name} pT is {pT}")
-        draw.plot_regional_deposits(X_mean.reshape(18, 14), f"{name} Mean Deposits")
-        deposits.append(X)
-        labels.append(name)
-    draw.plot_deposits_distribution(
-        deposits, labels, name="Zero Bias Energy Distribution"
-    )
-
-
 def train_model(model, X_train_gen, X_val_gen, name):
     draw = Draw("plots")
     model.compile(
@@ -73,8 +54,6 @@ def main():
     X_train_gen = generator.get_generator(X_train, X_train, 128, True)
     X_val_gen = generator.get_generator(X_val, X_val, 128)
     X_signal = generator.get_signal(config["signal"])
-
-    dataset_profiling(config["background"])
 
     teacher = TeacherAutoencoder((18, 14, 1)).get_model()
     teacher = train_model(teacher, X_train_gen, X_val_gen, "teacher")
