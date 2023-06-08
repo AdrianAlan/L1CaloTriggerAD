@@ -1,26 +1,40 @@
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+import argparse
 import numpy as np
+import numpy.typing as npt
 import tensorflow as tf
 import qkeras
 import yaml
 
+from pathlib import Path
 from tensorflow import keras
 from qkeras import *
+from typing import List, Optional, TypedDict
 
 from generator import RegionETGenerator
 from models import TeacherAutoencoder, CicadaV1, CicadaV2
 from plotting import Draw
+from utils import IsValidFile
 
 tf.get_logger().setLevel("ERROR")
 
 
-def loss(y_true, y_pred):
+def loss(y_true: npt.NDArray, y_pred: npt.NDArray) -> npt.NDArray:
     mse = keras.losses.MeanSquaredError(reduction=keras.losses.Reduction.NONE)
     loss = mse(y_true, y_pred).numpy()
     return np.mean(loss, axis=(1, 2))
 
 
-def train_model(model, X_train_gen, X_val_gen, name):
-    draw = Draw("plots")
+def train_model(
+    model: tf.keras.Model,
+    X_train_gen: tf.data.Dataset,
+    X_val_gen: tf.data.Dataset,
+    name: str,
+) -> tf.keras.Model:
+    draw = Draw(Path("plots"))
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=0.001),
         loss=keras.losses.MeanSquaredError(reduction=keras.losses.Reduction.AUTO),
@@ -41,10 +55,8 @@ def train_model(model, X_train_gen, X_val_gen, name):
     return model
 
 
-def main():
-    draw = Draw("plots")
-
-    config = yaml.safe_load(open("config.yml"))
+def run_training(config: dict, verbose: bool) -> None:
+    draw = Draw(Path("plots"))
 
     datasets = [i["path"] for i in config["background"] if i["use"]]
     datasets = [path for paths in datasets for path in paths]
@@ -107,12 +119,10 @@ def main():
         X_test.reshape(-1, 252, 1), batch_size=128, verbose=0
     )
 
-    results_teacher, results_students = dict(), dict()
+    results_teacher, results_cicada_v1, results_cicada_v2 = dict(), dict(), dict()
     results_teacher["2023 Zero Bias (Test)"] = y_loss_background_teacher
-    results_students["cicada_v1"] = dict()
-    results_students["cicada_v2"] = dict()
-    results_students["cicada_v1"]["2023 Zero Bias (Test)"] = y_loss_background_cicada_v1
-    results_students["cicada_v2"]["2023 Zero Bias (Test)"] = y_loss_background_cicada_v2
+    results_cicada_v1["2023 Zero Bias (Test)"] = y_loss_background_cicada_v1
+    results_cicada_v2["2023 Zero Bias (Test)"] = y_loss_background_cicada_v2
 
     y_true, y_pred_teacher, y_pred_cicada_v1, y_pred_cicada_v2 = [], [], [], []
     for name, data in X_signal.items():
@@ -125,8 +135,8 @@ def main():
         )
 
         results_teacher[name] = y_loss_teacher
-        results_students["cicada_v1"][name] = y_loss_cicada_v1
-        results_students["cicada_v2"][name] = y_loss_cicada_v2
+        results_cicada_v1[name] = y_loss_cicada_v1
+        results_cicada_v2[name] = y_loss_cicada_v2
 
         y_true.append(
             np.concatenate((np.ones(data.shape[0]), np.zeros(X_test.shape[0])))
@@ -142,25 +152,47 @@ def main():
         )
 
     draw.plot_anomaly_score_distribution(
-        results_teacher.values(),
-        results_teacher.keys(),
+        list(results_teacher.values()),
+        [*results_teacher],
         "anomaly-score-teacher",
     )
     draw.plot_anomaly_score_distribution(
-        results_students["cicada_v1"].values(),
-        results_students["cicada_v1"].keys(),
+        list(results_cicada_v1.values()),
+        [*results_cicada_v1],
         "anomaly-score-cicada-v1",
     )
     draw.plot_anomaly_score_distribution(
-        results_students["cicada_v2"].values(),
-        results_students["cicada_v2"].keys(),
+        list(results_cicada_v2.values()),
+        [*results_cicada_v2],
         "anomaly-score-cicada-v2",
     )
 
     # ROC Curves with Cross-Validation
-    draw.plot_roc_curve(y_true, y_pred_teacher, X_signal.keys(), "roc-teacher")
-    draw.plot_roc_curve(y_true, y_pred_cicada_v1, X_signal.keys(), "roc-cicada-v1")
-    draw.plot_roc_curve(y_true, y_pred_cicada_v2, X_signal.keys(), "roc-cicada-v2")
+    draw.plot_roc_curve(y_true, y_pred_teacher, [*X_signal], "roc-teacher")
+    draw.plot_roc_curve(y_true, y_pred_cicada_v1, [*X_signal], "roc-cicada-v1")
+    draw.plot_roc_curve(y_true, y_pred_cicada_v2, [*X_signal], "roc-cicada-v2")
+
+
+def main(args_in: Optional[List[str]] = None) -> None:
+    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
+    parser.add_argument(
+        "-c",
+        "--config",
+        action=IsValidFile,
+        type=Path,
+        help="Path to the config file",
+        default="config.yml",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Output verbosity",
+        default=False,
+    )
+    args = parser.parse_args()
+    config = yaml.safe_load(open(args.config))
+    run_training(config, args.verbose)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 import random
 
 from pathlib import Path
@@ -16,7 +17,7 @@ class Draw:
         return name.replace(" ", "-").lower()
 
     def plot_loss_history(
-        self, training_loss: np.array, validation_loss: np.array, name: str
+        self, training_loss: npt.NDArray, validation_loss: npt.NDArray, name: str
     ) -> None:
         plt.figure(figsize=(15, 10))
         plt.plot(np.arange(1, len(training_loss) + 1), training_loss, label="Training")
@@ -32,7 +33,7 @@ class Draw:
         plt.close()
 
     def plot_regional_deposits(
-        self, deposits: np.array, mean: float, name: str
+        self, deposits: npt.NDArray, mean: float, name: str
     ) -> None:
         plt.figure(figsize=(7, 9))
         im = plt.imshow(
@@ -50,7 +51,7 @@ class Draw:
         plt.close()
 
     def plot_deposits_distribution(
-        self, deposits: List[np.array], labels: List[str], name: str
+        self, deposits: List[npt.NDArray], labels: List[str], name: str
     ) -> None:
         plt.figure(figsize=(15, 10))
         for deposit, label in zip(deposits, labels):
@@ -71,7 +72,11 @@ class Draw:
         plt.close()
 
     def plot_reconstruction_results(
-        self, deposits_in: np.array, deposits_out: np.array, loss: float, name: str
+        self,
+        deposits_in: npt.NDArray,
+        deposits_out: npt.NDArray,
+        loss: float,
+        name: str,
     ) -> None:
         fig, ax = plt.subplots(figsize=(17, 17))
 
@@ -113,7 +118,7 @@ class Draw:
         plt.close()
 
     def plot_anomaly_score_distribution(
-        self, scores: List[np.array], labels: List[str], name: str
+        self, scores: List[npt.NDArray], labels: List[str], name: str
     ) -> None:
         plt.figure(figsize=(15, 10))
         for score, label in zip(scores, labels):
@@ -135,8 +140,8 @@ class Draw:
 
     def plot_roc_curve(
         self,
-        y_trues: List[np.array],
-        y_preds: List[np.array],
+        y_trues: List[npt.NDArray],
+        y_preds: List[npt.NDArray],
         labels: List[str],
         name: str,
         cv: int = 5,
