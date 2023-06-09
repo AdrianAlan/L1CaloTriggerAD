@@ -42,7 +42,7 @@ def train_model(
     history = model.fit(
         X_train_gen,
         steps_per_epoch=len(X_train_gen),
-        epochs=2,
+        epochs=40,
         validation_data=X_val_gen,
         validation_steps=len(X_val_gen),
         verbose=2,
