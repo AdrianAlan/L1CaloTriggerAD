@@ -23,9 +23,7 @@ tf.get_logger().setLevel("ERROR")
 
 
 def loss(y_true: npt.NDArray, y_pred: npt.NDArray) -> npt.NDArray:
-    mse = keras.losses.MeanSquaredError(reduction=keras.losses.Reduction.NONE)
-    loss = mse(y_true, y_pred).numpy()
-    return np.mean(loss, axis=(1, 2))
+    return np.mean((y_true - y_pred) ** 2, axis=(1, 2, 3))
 
 
 def train_model(
@@ -33,29 +31,23 @@ def train_model(
     X_train_gen: tf.data.Dataset,
     X_val_gen: tf.data.Dataset,
     name: str,
-) -> tf.keras.Model:
+) -> None:
     draw = Draw(Path("plots"))
-    model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=0.001),
-        loss=keras.losses.MeanSquaredError(reduction=keras.losses.Reduction.AUTO),
-    )
+    model.compile(optimizer="adam", loss="mse")
     history = model.fit(
         X_train_gen,
         steps_per_epoch=len(X_train_gen),
         epochs=40,
         validation_data=X_val_gen,
-        validation_steps=len(X_val_gen),
-        verbose=2,
+        verbose=1,
     )
     draw.plot_loss_history(
         history.history["loss"], history.history["val_loss"], f"{name}-training-history"
     )
     model.save(f"saved_models/{name}")
-    model = keras.models.load_model(f"saved_models/{name}")
-    return model
 
 
-def run_training(config: dict, verbose: bool) -> None:
+def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     draw = Draw(Path("plots"))
 
     datasets = [i["path"] for i in config["background"] if i["use"]]
@@ -65,49 +57,57 @@ def run_training(config: dict, verbose: bool) -> None:
     X_train, X_val, X_test = generator.get_background_split(datasets)
     X_train_gen = generator.get_generator(X_train, X_train, 128, True)
     X_val_gen = generator.get_generator(X_val, X_val, 128)
-    X_signal = generator.get_signal(config["signal"])
+    X_signal = generator.get_signal(config["signal"], filter_acceptance=False)
 
-    teacher = TeacherAutoencoder((18, 14, 1)).get_model()
-    teacher = train_model(teacher, X_train_gen, X_val_gen, "teacher")
+    if not eval_only:
+        teacher = TeacherAutoencoder((18, 14, 1)).get_model()
+        train_model(teacher, X_train_gen, X_val_gen, "teacher")
+    teacher = keras.models.load_model("saved_models/teacher")
 
     # Comparison between original and reconstructed inputs
-    y_example = teacher.predict(X_test[:1], verbose=0)
+    X_example = X_test[:1]
+    y_example = teacher.predict(X_example, verbose=0)
     draw.plot_reconstruction_results(
-        X_test[:1],
+        X_example,
         y_example,
-        loss=loss(X_test, y_example)[0],
+        loss=loss(X_example, y_example)[0],
         name="comparison-background",
     )
-    y_example = teacher.predict(X_signal["SUSYGGBBH"][:1], verbose=0)
+    X_example = X_signal["SUSYGGBBH"][:1]
+    y_example = teacher.predict(X_example, verbose=0)
     draw.plot_reconstruction_results(
-        X_signal["SUSYGGBBH"][:1],
+        X_example,
         y_example,
-        loss=loss(X_test, y_example)[0],
+        loss=loss(X_example, y_example)[0],
         name="comparison-signal",
     )
 
     # Prepare student datasets
-    y_train = teacher.predict(X_train, batch_size=128, verbose=0)
-    y_train = loss(X_train, y_train)
+    y_train_teacher = teacher.predict(X_train, batch_size=128, verbose=0)
+    y_train = loss(X_train, y_train_teacher)
     X_train_gen_student = generator.get_generator(
-        X_train.reshape((-1, 252, 1)), y_train, 128, True
+        X_train.reshape((-1, 252, 1)), y_train, 1024, True
     )
 
-    y_val = teacher.predict(X_val, batch_size=128, verbose=0)
-    y_val = loss(X_val, y_val)
+    y_val_teacher = teacher.predict(X_val, batch_size=128, verbose=0)
+    y_val = loss(X_val, y_val_teacher)
     X_val_gen_student = generator.get_generator(
-        X_val.reshape((-1, 252, 1)), y_val, 128, False
+        X_val.reshape((-1, 252, 1)), y_val, 1024, False
     )
 
     # Knowledge Distillation and Quantization Aware Training
-    cicada_v1 = CicadaV1((252,)).get_model()
-    cicada_v1 = train_model(
-        cicada_v1, X_train_gen_student, X_val_gen_student, "cicada-v1"
-    )
-    cicada_v2 = CicadaV2((252,)).get_model()
-    cicada_v2 = train_model(
-        cicada_v1, X_train_gen_student, X_val_gen_student, "cicada-v2"
-    )
+    if not eval_only:
+        cicada_v1 = CicadaV1((252,)).get_model()
+        cicada_v1 = train_model(
+            cicada_v1, X_train_gen_student, X_val_gen_student, "cicada-v1"
+        )
+        cicada_v2 = CicadaV2((252,)).get_model()
+        cicada_v2 = train_model(
+            cicada_v2, X_train_gen_student, X_val_gen_student, "cicada-v2"
+        )
+
+    cicada_v1 = keras.models.load_model("saved_models/cicada-v1")
+    cicada_v2 = keras.models.load_model("saved_models/cicada-v2")
 
     # Evaluation
     y_pred_background_teacher = teacher.predict(X_test, batch_size=128, verbose=0)
@@ -133,7 +133,6 @@ def run_training(config: dict, verbose: bool) -> None:
         y_loss_cicada_v2 = cicada_v2.predict(
             data.reshape(-1, 252, 1), batch_size=128, verbose=0
         )
-
         results_teacher[name] = y_loss_teacher
         results_cicada_v1[name] = y_loss_cicada_v1
         results_cicada_v2[name] = y_loss_cicada_v2
@@ -184,6 +183,12 @@ def main(args_in: Optional[List[str]] = None) -> None:
         default="config.yml",
     )
     parser.add_argument(
+        "--evaluate-only",
+        action="store_true",
+        help="Skip training",
+        default=False,
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -192,7 +197,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training(config, args.verbose)
+    run_training(config, args.evaluate_only, args.verbose)
 
 
 if __name__ == "__main__":
