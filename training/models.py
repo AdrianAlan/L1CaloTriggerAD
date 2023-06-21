@@ -54,26 +54,20 @@ class CicadaV1:
 
     def get_model(self):
         inputs = Input(shape=self.input_shape, name="inputs_")
-        x = QDense(
-            15,
-            kernel_quantizer=quantized_bits(2, 0, 1, alpha=1.0),
+        x = QDenseBatchnorm(
+            16,
+            kernel_quantizer=quantized_bits(16, 4, 1, alpha=1.0),
             use_bias=False,
             name="dense1",
         )(inputs)
-        x = QBatchNormalization(
-            beta_quantizer=quantized_bits(10, 2, 1, alpha="auto"),
-            gamma_quantizer=quantized_bits(10, 2, 1, alpha="auto"),
-            mean_quantizer=quantized_bits(10, 2, 1, alpha="auto"),
-            variance_quantizer=quantized_bits(10, 2, 1, alpha="auto"),
-            name="QBN1",
-        )(x)
-        x = QActivation("quantized_relu(5, 2)", name="relu1")(x)
-        outputs = QDense(
+        x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
+        x = QDense(
             1,
-            kernel_quantizer=quantized_bits(4, 0, 1, alpha=1.0),
+            kernel_quantizer=quantized_bits(16, 2, 1, alpha=1.0),
             use_bias=False,
-            name="output",
+            name="dense2",
         )(x)
+        outputs = QActivation("quantized_relu(16, 8)", name="outputs")(x)
         return Model(inputs, outputs, name="cicada-v1")
 
 
@@ -85,27 +79,28 @@ class CicadaV2:
         inputs = Input(shape=self.input_shape, name="inputs_")
         x = Reshape((18, 14, 1), name="reshape")(inputs)
         x = QConv2D(
-            3,
-            (3, 3),
+            4,
+            (2, 2),
             strides=2,
             padding="valid",
             use_bias=False,
             kernel_quantizer=quantized_bits(16, 4, 1, alpha="auto"),
             name="conv",
         )(x)
-        x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
+        x = QActivation("quantized_relu(10, 4)", name="relu0")(x)
         x = Flatten(name="flatten")(x)
-        x = QDense(
-            20,
-            kernel_quantizer=quantized_bits(16, 4, 1, alpha="auto"),
+        x = QDenseBatchnorm(
+            16,
+            kernel_quantizer=quantized_bits(16, 4, 1, alpha=1.0),
             use_bias=False,
             name="dense1",
         )(x)
-        x = QActivation("quantized_relu(16, 4)", name="relu2")(x)
-        outputs = QDense(
+        x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
+        x = QDense(
             1,
-            kernel_quantizer=quantized_bits(16, 2, 1, alpha="auto"),
+            kernel_quantizer=quantized_bits(16, 2, 1, alpha=1.0),
             use_bias=False,
-            name="output",
+            name="dense2",
         )(x)
+        outputs = QActivation("quantized_relu(16, 8)", name="outputs")(x)
         return Model(inputs, outputs, name="cicada-v2")
