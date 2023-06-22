@@ -26,6 +26,16 @@ def loss(y_true: npt.NDArray, y_pred: npt.NDArray) -> npt.NDArray:
     return np.mean((y_true - y_pred) ** 2, axis=(1, 2, 3))
 
 
+def quantize(arr: npt.NDArray, precision: tuple = (16, 8)) -> npt.NDArray:
+    word, int_ = precision
+    decimal = word - int_
+    step = 1 / 2**decimal
+    max_ = 2**int_ - step
+    arrq = step * np.round(arr / step)
+    arrc = np.clip(arrq, 0, max_)
+    return arrc
+
+
 def train_model(
     model: tf.keras.Model,
     X_train_gen: tf.data.Dataset,
@@ -85,12 +95,14 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     # Prepare student datasets
     y_train_teacher = teacher.predict(X_train, batch_size=128, verbose=0)
     y_train = loss(X_train, y_train_teacher)
+    y_train = quantize(y_train)
     X_train_gen_student = generator.get_generator(
         X_train.reshape((-1, 252, 1)), y_train, 1024, True
     )
 
     y_val_teacher = teacher.predict(X_val, batch_size=128, verbose=0)
     y_val = loss(X_val, y_val_teacher)
+    y_val = quantize(y_val)
     X_val_gen_student = generator.get_generator(
         X_val.reshape((-1, 252, 1)), y_val, 1024, False
     )
