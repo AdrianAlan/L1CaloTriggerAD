@@ -47,7 +47,7 @@ def train_model(
     history = model.fit(
         X_train_gen,
         steps_per_epoch=len(X_train_gen),
-        epochs=40,
+        epochs=100,
         validation_data=X_val_gen,
         verbose=1,
     )
@@ -65,8 +65,8 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
 
     generator = RegionETGenerator()
     X_train, X_val, X_test = generator.get_background_split(datasets)
-    X_train_gen = generator.get_generator(X_train, X_train, 128, True)
-    X_val_gen = generator.get_generator(X_val, X_val, 128)
+    X_train_gen = generator.get_generator(X_train, X_train, 512, True)
+    X_val_gen = generator.get_generator(X_val, X_val, 512)
     X_signal = generator.get_signal(config["signal"], filter_acceptance=False)
 
     if not eval_only:
@@ -93,14 +93,14 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     )
 
     # Prepare student datasets
-    y_train_teacher = teacher.predict(X_train, batch_size=128, verbose=0)
+    y_train_teacher = teacher.predict(X_train, batch_size=512, verbose=0)
     y_train = loss(X_train, y_train_teacher)
     y_train = quantize(y_train)
     X_train_gen_student = generator.get_generator(
         X_train.reshape((-1, 252, 1)), y_train, 1024, True
     )
 
-    y_val_teacher = teacher.predict(X_val, batch_size=128, verbose=0)
+    y_val_teacher = teacher.predict(X_val, batch_size=512, verbose=0)
     y_val = loss(X_val, y_val_teacher)
     y_val = quantize(y_val)
     X_val_gen_student = generator.get_generator(
@@ -122,13 +122,13 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     cicada_v2 = keras.models.load_model("saved_models/cicada-v2")
 
     # Evaluation
-    y_pred_background_teacher = teacher.predict(X_test, batch_size=128, verbose=0)
+    y_pred_background_teacher = teacher.predict(X_test, batch_size=512, verbose=0)
     y_loss_background_teacher = loss(X_test, y_pred_background_teacher)
     y_loss_background_cicada_v1 = cicada_v1.predict(
-        X_test.reshape(-1, 252, 1), batch_size=128, verbose=0
+        X_test.reshape(-1, 252, 1), batch_size=512, verbose=0
     )
     y_loss_background_cicada_v2 = cicada_v2.predict(
-        X_test.reshape(-1, 252, 1), batch_size=128, verbose=0
+        X_test.reshape(-1, 252, 1), batch_size=512, verbose=0
     )
 
     results_teacher, results_cicada_v1, results_cicada_v2 = dict(), dict(), dict()
@@ -138,12 +138,12 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
 
     y_true, y_pred_teacher, y_pred_cicada_v1, y_pred_cicada_v2 = [], [], [], []
     for name, data in X_signal.items():
-        y_loss_teacher = loss(data, teacher.predict(data, batch_size=128, verbose=0))
+        y_loss_teacher = loss(data, teacher.predict(data, batch_size=512, verbose=0))
         y_loss_cicada_v1 = cicada_v1.predict(
-            data.reshape(-1, 252, 1), batch_size=128, verbose=0
+            data.reshape(-1, 252, 1), batch_size=512, verbose=0
         )
         y_loss_cicada_v2 = cicada_v2.predict(
-            data.reshape(-1, 252, 1), batch_size=128, verbose=0
+            data.reshape(-1, 252, 1), batch_size=512, verbose=0
         )
         results_teacher[name] = y_loss_teacher
         results_cicada_v1[name] = y_loss_cicada_v1
