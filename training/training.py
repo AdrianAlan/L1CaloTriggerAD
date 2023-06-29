@@ -11,6 +11,7 @@ import yaml
 
 from pathlib import Path
 from tensorflow import keras
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from qkeras import *
 from typing import List, Optional, TypedDict
 
@@ -50,11 +51,16 @@ def train_model(
         epochs=100,
         validation_data=X_val_gen,
         verbose=1,
+        callbacks=[
+            ReduceLROnPlateau(factor=0.5, patience=20),
+            ModelCheckpoint(
+                f"saved_models/{name}", save_weights_only=True, save_best_only=True
+            ),
+        ],
     )
     draw.plot_loss_history(
         history.history["loss"], history.history["val_loss"], f"{name}-training-history"
     )
-    model.save(f"saved_models/{name}")
 
 
 def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
