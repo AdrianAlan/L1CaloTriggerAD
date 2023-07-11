@@ -52,3 +52,9 @@ signal:
    - '/eos/project/c/cicada-project/data/2023/Signal/VBFHto2C.h5'
    name: 'VBHFto2C'
    use: True
+
+exposure:
+ training:
+  - '/eos/project/c/cicada-project/data/2023/Signal/DummyOutliers-Training.h5'
+ validation:
+  - '/eos/project/c/cicada-project/data/2023/Signal/DummyOutliers-Validation.h5'

@@ -42,9 +42,11 @@ def train_model(
     X_train_gen: tf.data.Dataset,
     X_val_gen: tf.data.Dataset,
     name: str,
+    lr: float = 0.001,
+    loss: str = "mse",
 ) -> None:
     draw = Draw(Path("plots"))
-    model.compile(optimizer="adam", loss="mse")
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr), loss=loss)
     history = model.fit(
         X_train_gen,
         steps_per_epoch=len(X_train_gen),
@@ -54,7 +56,7 @@ def train_model(
         callbacks=[
             ReduceLROnPlateau(factor=0.5, patience=20),
             ModelCheckpoint(
-                f"saved_models/{name}", save_weights_only=True, save_best_only=True
+                f"saved_models/{name}", save_weights_only=False, save_best_only=True
             ),
         ],
     )
@@ -74,6 +76,8 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     X_train_gen = generator.get_generator(X_train, X_train, 512, True)
     X_val_gen = generator.get_generator(X_val, X_val, 512)
     X_signal = generator.get_signal(config["signal"], filter_acceptance=False)
+    outlier_train = generator.get_background(config["exposure"]["training"])
+    outlier_val = generator.get_background(config["exposure"]["validation"])
 
     if not eval_only:
         teacher = TeacherAutoencoder((18, 14, 1)).get_model()
@@ -99,29 +103,43 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     )
 
     # Prepare student datasets
-    y_train_teacher = teacher.predict(X_train, batch_size=512, verbose=0)
-    y_train = loss(X_train, y_train_teacher)
+    X_train_student = np.concatenate([X_train, outlier_train])
+    y_train_teacher = teacher.predict(X_train_student, batch_size=512, verbose=0)
+    y_train = loss(X_train_student, y_train_teacher)
+    y_train = np.log(y_train) * 32
     y_train = quantize(y_train)
     X_train_gen_student = generator.get_generator(
-        X_train.reshape((-1, 252, 1)), y_train, 1024, True
+        X_train_student.reshape((-1, 252, 1)), y_train, 1024, True
     )
 
-    y_val_teacher = teacher.predict(X_val, batch_size=512, verbose=0)
-    y_val = loss(X_val, y_val_teacher)
+    X_val_student = np.concatenate([X_val, outlier_train])
+    y_val_teacher = teacher.predict(X_val_student, batch_size=512, verbose=0)
+    y_val = loss(X_val_student, y_val_teacher)
+    y_val = np.log(y_val) * 32
     y_val = quantize(y_val)
     X_val_gen_student = generator.get_generator(
-        X_val.reshape((-1, 252, 1)), y_val, 1024, False
+        X_val_student.reshape((-1, 252, 1)), y_val, 1024, False
     )
 
     # Knowledge Distillation and Quantization Aware Training
     if not eval_only:
         cicada_v1 = CicadaV1((252,)).get_model()
         cicada_v1 = train_model(
-            cicada_v1, X_train_gen_student, X_val_gen_student, "cicada-v1"
+            cicada_v1,
+            X_train_gen_student,
+            X_val_gen_student,
+            "cicada-v1",
+            lr=0.01,
+            loss="mae",
         )
         cicada_v2 = CicadaV2((252,)).get_model()
         cicada_v2 = train_model(
-            cicada_v2, X_train_gen_student, X_val_gen_student, "cicada-v2"
+            cicada_v2,
+            X_train_gen_student,
+            X_val_gen_student,
+            "cicada-v2",
+            lr=0.01,
+            loss="mae",
         )
 
     cicada_v1 = keras.models.load_model("saved_models/cicada-v1")
