@@ -8,6 +8,7 @@ from tensorflow.keras.layers import (
     AveragePooling2D,
     Conv2D,
     Dense,
+    Dropout,
     Flatten,
     Input,
     Reshape,
@@ -61,6 +62,7 @@ class CicadaV1:
             name="dense1",
         )(inputs)
         x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
+        x = Dropout(0.125)(x)
         x = QDense(
             1,
             kernel_quantizer=quantized_bits(16, 2, 1, alpha=1.0),
@@ -89,6 +91,7 @@ class CicadaV2:
         )(x)
         x = QActivation("quantized_relu(10, 4)", name="relu0")(x)
         x = Flatten(name="flatten")(x)
+        x = Dropout(1 / 9)(x)
         x = QDenseBatchnorm(
             16,
             kernel_quantizer=quantized_bits(16, 4, 1, alpha=1.0),
