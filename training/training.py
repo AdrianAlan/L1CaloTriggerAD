@@ -161,7 +161,10 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     results_cicada_v2["2023 Zero Bias (Test)"] = y_loss_background_cicada_v2
 
     y_true, y_pred_teacher, y_pred_cicada_v1, y_pred_cicada_v2 = [], [], [], []
+    inputs = []
     for name, data in X_signal.items():
+        inputs.append(np.concatenate((data, X_test)))
+
         y_loss_teacher = loss(data, teacher.predict(data, batch_size=512, verbose=0))
         y_loss_cicada_v1 = cicada_v1.predict(
             data.reshape(-1, 252, 1), batch_size=512, verbose=0
@@ -203,9 +206,9 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
     )
 
     # ROC Curves with Cross-Validation
-    draw.plot_roc_curve(y_true, y_pred_teacher, [*X_signal], "roc-teacher")
-    draw.plot_roc_curve(y_true, y_pred_cicada_v1, [*X_signal], "roc-cicada-v1")
-    draw.plot_roc_curve(y_true, y_pred_cicada_v2, [*X_signal], "roc-cicada-v2")
+    draw.plot_roc_curve(y_true, y_pred_teacher, [*X_signal], inputs, "roc-teacher")
+    draw.plot_roc_curve(y_true, y_pred_cicada_v1, [*X_signal], inputs, "roc-cicada-v1")
+    draw.plot_roc_curve(y_true, y_pred_cicada_v2, [*X_signal], inputs, "roc-cicada-v2")
 
 
 def main(args_in: Optional[List[str]] = None) -> None:

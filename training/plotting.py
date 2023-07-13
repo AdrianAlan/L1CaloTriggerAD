@@ -142,43 +142,45 @@ class Draw:
         y_trues: List[npt.NDArray],
         y_preds: List[npt.NDArray],
         labels: List[str],
+        inputs: List[npt.NDArray],
         name: str,
         cv: int = 3,
     ) -> None:
+        plt.figure(figsize=(8, 8))
         colors = ["green", "red", "blue", "orange", "purple"]
         skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
-        plt.figure(figsize=(8, 8))
-        for y_true, y_pred, label, color in zip(y_trues, y_preds, labels, colors):
-            tprs, aucs = [], []
-            mean_fpr = np.logspace(np.log10((10**-4) / 28.61), 0, 10000)
+        for y_true, y_pred, label, color, d in zip(
+            y_trues, y_preds, labels, colors, inputs
+        ):
+            aucs = []
             for _, indices in skf.split(y_pred, y_true):
-                y_pred_cv = y_pred[indices]
-                y_true_cv = y_true[indices]
-                fpr, tpr, _ = roc_curve(y_true_cv, y_pred_cv)
-                roc_auc = auc(fpr, tpr)
-                interp_tpr = np.interp(mean_fpr, fpr, tpr)
-                interp_tpr[0] = 0.0
-                tprs.append(interp_tpr)
-                aucs.append(roc_auc)
-
-            mean_tpr = np.mean(tprs, axis=0)
-            mean_tpr[-1] = 1.0
-            mean_auc = auc(mean_fpr, mean_tpr)
+                fpr, tpr, _ = roc_curve(y_true[indices], y_pred[indices])
+                aucs.append(auc(fpr, tpr))
             std_auc = np.std(aucs)
-            mean_fpr *= 28.61  # Convert to trigger rate
+
+            fpr, tpr, _ = roc_curve(y_true, y_pred)
+            roc_auc = auc(fpr, tpr)
+            fpr_base, tpr_base, _ = roc_curve(y_true, np.mean(d**2, axis=(1, 2)))
+
             plt.plot(
-                mean_fpr,
-                mean_tpr,
+                fpr * 28.61,
+                tpr,
                 linestyle="-",
                 lw=1.5,
                 color=color,
                 alpha=0.8,
-                label=rf"{label} (AUC = {mean_auc: .4f} $\pm$ {std_auc: .4f})",
+                label=rf"{label} (AUC = {roc_auc: .4f} $\pm$ {std_auc: .4f})",
             )
-            std_tpr = np.std(tprs, axis=0)
-            tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
-            tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
-            plt.fill_between(mean_fpr, tprs_lower, tprs_upper, color=color, alpha=0.05)
+
+            plt.plot(
+                fpr_base * 28.61,
+                tpr_base,
+                linestyle="--",
+                lw=1.0,
+                color=color,
+                alpha=0.5,
+                label=rf"{label}, Baseline",
+            )
 
         plt.plot(
             [0.003, 0.003],
@@ -189,7 +191,7 @@ class Draw:
             label="3 kHz",
         )
         plt.xlim([0.0001, 28.61])
-        plt.ylim([0.001, 1.0])
+        plt.ylim([0.01, 1.0])
         plt.xscale("log")
         plt.yscale("log")
         plt.xlabel("Trigger Rate (MHz)", size=15)
