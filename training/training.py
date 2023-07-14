@@ -1,6 +1,7 @@
 import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 import argparse
 import numpy as np
@@ -43,6 +44,7 @@ def train_model(
     X_val_gen: tf.data.Dataset,
     name: str,
     lr: float = 0.001,
+    epochs: int = 100,
     loss: str = "mse",
 ) -> None:
     draw = Draw(Path("plots"))
@@ -50,7 +52,7 @@ def train_model(
     history = model.fit(
         X_train_gen,
         steps_per_epoch=len(X_train_gen),
-        epochs=100,
+        epochs=epochs,
         validation_data=X_val_gen,
         verbose=1,
         callbacks=[
@@ -130,6 +132,7 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
             X_val_gen_student,
             "cicada-v1",
             lr=0.01,
+            epochs=1024,
             loss="mae",
         )
         cicada_v2 = CicadaV2((252,)).get_model()
@@ -139,6 +142,7 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
             X_val_gen_student,
             "cicada-v2",
             lr=0.01,
+            epochs=1024,
             loss="mae",
         )
 

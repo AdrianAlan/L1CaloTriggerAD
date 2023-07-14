@@ -133,5 +133,4 @@ dmypy.json
 *.pth
 *.yml
 
-keras/models
-torch/models
+training/saved_models

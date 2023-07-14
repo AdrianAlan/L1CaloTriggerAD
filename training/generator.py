@@ -26,7 +26,7 @@ class RegionETGenerator:
     ) -> data.Dataset:
         dataset = data.Dataset.from_tensor_slices((X, y))
         return (
-            dataset.shuffle(10 * batch_size)
+            dataset.shuffle(100 * batch_size)
             .batch(batch_size, drop_remainder=drop_reminder)
             .prefetch(data.AUTOTUNE)
         )
