@@ -26,12 +26,12 @@ class RegionETGenerator:
     ) -> data.Dataset:
         dataset = data.Dataset.from_tensor_slices((X, y))
         return (
-            dataset.shuffle(100 * batch_size)
+            dataset.shuffle(210 * batch_size)
             .batch(batch_size, drop_remainder=drop_reminder)
             .prefetch(data.AUTOTUNE)
         )
 
-    def get_background(self, datasets_paths: List[Path]) -> npt.NDArray:
+    def get_data(self, datasets_paths: List[Path]) -> npt.NDArray:
         inputs = []
         for dataset_path in datasets_paths:
             inputs.append(
@@ -41,10 +41,10 @@ class RegionETGenerator:
         X = np.reshape(X, (-1, 18, 14, 1))
         return X
 
-    def get_background_split(
+    def get_data_split(
         self, datasets_paths: List[Path]
     ) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
-        X = self.get_background(datasets_paths)
+        X = self.get_data(datasets_paths)
         X_train, X_test = train_test_split(
             X, test_size=self.test_size, random_state=self.random_state
         )
@@ -55,7 +55,7 @@ class RegionETGenerator:
         )
         return (X_train, X_val, X_test)
 
-    def get_signal(
+    def get_benchmark(
         self, datasets: dict, filter_acceptance=True
     ) -> dict[str, npt.NDArray]:
         signals = {}

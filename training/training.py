@@ -1,18 +1,21 @@
 import os
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 import argparse
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import tensorflow as tf
 import qkeras
 import yaml
 
 from pathlib import Path
 from tensorflow import keras
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras import Model
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+from tensorflow.keras.optimizers import Adam
 from qkeras import *
 from typing import List, Optional, TypedDict
 
@@ -38,53 +41,109 @@ def quantize(arr: npt.NDArray, precision: tuple = (16, 8)) -> npt.NDArray:
     return arrc
 
 
+def get_student_targets(teacher: Model, gen: RegionETGenerator, X: np.array) -> None:
+    X_hat = teacher.predict(X, batch_size=512, verbose=0)
+    y = loss(X, X_hat)
+    y = quantize(np.log(y) * 32)
+    return gen.get_generator(X.reshape((-1, 252, 1)), y, 1024, True)
+
+
 def train_model(
-    model: tf.keras.Model,
-    X_train_gen: tf.data.Dataset,
-    X_val_gen: tf.data.Dataset,
-    name: str,
-    lr: float = 0.001,
-    epochs: int = 100,
-    loss: str = "mse",
+    model: Model,
+    gen_train: tf.data.Dataset,
+    gen_val: tf.data.Dataset,
+    epoch: int = 1,
+    steps: int = 1,
+    callbacks=None,
 ) -> None:
-    draw = Draw(Path("plots"))
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr), loss=loss)
-    history = model.fit(
-        X_train_gen,
-        steps_per_epoch=len(X_train_gen),
-        epochs=epochs,
-        validation_data=X_val_gen,
-        verbose=1,
-        callbacks=[
-            ReduceLROnPlateau(factor=0.5, patience=20),
-            ModelCheckpoint(
-                f"saved_models/{name}", save_weights_only=False, save_best_only=True
-            ),
-        ],
-    )
-    draw.plot_loss_history(
-        history.history["loss"], history.history["val_loss"], f"{name}-training-history"
+    model.fit(
+        gen_train,
+        steps_per_epoch=len(gen_train),
+        initial_epoch=epoch,
+        epochs=epoch + steps,
+        validation_data=gen_val,
+        callbacks=callbacks,
+        verbose=0,
     )
 
 
-def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
+def run_training(
+    config: dict, eval_only: bool, epochs: int = 100, verbose: bool = False
+) -> None:
     draw = Draw(Path("plots"))
 
     datasets = [i["path"] for i in config["background"] if i["use"]]
     datasets = [path for paths in datasets for path in paths]
 
-    generator = RegionETGenerator()
-    X_train, X_val, X_test = generator.get_background_split(datasets)
-    X_train_gen = generator.get_generator(X_train, X_train, 512, True)
-    X_val_gen = generator.get_generator(X_val, X_val, 512)
-    X_signal = generator.get_signal(config["signal"], filter_acceptance=False)
-    outlier_train = generator.get_background(config["exposure"]["training"])
-    outlier_val = generator.get_background(config["exposure"]["validation"])
+    gen = RegionETGenerator()
+    X_train, X_val, X_test = gen.get_data_split(datasets)
+    X_signal = gen.get_benchmark(config["signal"], filter_acceptance=False)
+    gen_train = gen.get_generator(X_train, X_train, 512, True)
+    gen_val = gen.get_generator(X_val, X_val, 512)
+    outlier_train = gen.get_data(config["exposure"]["training"])
+    outlier_val = gen.get_data(config["exposure"]["validation"])
+
+    X_train_student = np.concatenate([X_train, outlier_train])
+    X_val_student = np.concatenate([X_val, outlier_train])
 
     if not eval_only:
         teacher = TeacherAutoencoder((18, 14, 1)).get_model()
-        train_model(teacher, X_train_gen, X_val_gen, "teacher")
+        teacher.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
+        t_mc = ModelCheckpoint(f"saved_models/{teacher.name}", save_best_only=True)
+        t_lr = ReduceLROnPlateau(factor=0.8, patience=10)
+        t_log = CSVLogger(f"saved_models/{teacher.name}/training.log", append=True)
+
+        cicada_v1 = CicadaV1((252,)).get_model()
+        cicada_v1.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
+        cv1_mc = ModelCheckpoint(f"saved_models/{cicada_v1.name}", save_best_only=True)
+        cv1_lr = ReduceLROnPlateau(factor=0.8, patience=50)
+        cv1_log = CSVLogger(f"saved_models/{cicada_v1.name}/training.log", append=True)
+
+        cicada_v2 = CicadaV2((252,)).get_model()
+        cicada_v2.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
+        cv2_mc = ModelCheckpoint(f"saved_models/{cicada_v2.name}", save_best_only=True)
+        cv2_lr = ReduceLROnPlateau(factor=0.8, patience=50)
+        cv2_log = CSVLogger(f"saved_models/{cicada_v2.name}/training.log", append=True)
+
+        for epoch in range(epochs):
+            train_model(
+                teacher,
+                gen_train,
+                gen_val,
+                epoch=epoch,
+                callbacks=[t_mc, t_lr, t_log],
+            )
+
+            tmp_teacher = keras.models.load_model("saved_models/teacher")
+            s_gen_train = get_student_targets(tmp_teacher, gen, X_train_student)
+            s_gen_val = get_student_targets(tmp_teacher, gen, X_val_student)
+
+            train_model(
+                cicada_v1,
+                s_gen_train,
+                s_gen_val,
+                epoch=10 * epoch,
+                steps=10,
+                callbacks=[cv1_mc, cv1_lr, cv1_log],
+            )
+            train_model(
+                cicada_v2,
+                s_gen_train,
+                s_gen_val,
+                epoch=10 * epoch,
+                steps=10,
+                callbacks=[cv2_mc, cv2_lr, cv2_log],
+            )
+
+        for model in [teacher, cicada_v1, cicada_v2]:
+            log = pd.read_csv(f"saved_models/{model.name}/training.log")
+            draw.plot_loss_history(
+                log["loss"], log["val_loss"], f"{model.name}-training-history"
+            )
+
     teacher = keras.models.load_model("saved_models/teacher")
+    cicada_v1 = keras.models.load_model("saved_models/cicada-v1")
+    cicada_v2 = keras.models.load_model("saved_models/cicada-v2")
 
     # Comparison between original and reconstructed inputs
     X_example = X_test[:1]
@@ -103,51 +162,6 @@ def run_training(config: dict, eval_only: bool, verbose: bool) -> None:
         loss=loss(X_example, y_example)[0],
         name="comparison-signal",
     )
-
-    # Prepare student datasets
-    X_train_student = np.concatenate([X_train, outlier_train])
-    y_train_teacher = teacher.predict(X_train_student, batch_size=512, verbose=0)
-    y_train = loss(X_train_student, y_train_teacher)
-    y_train = np.log(y_train) * 32
-    y_train = quantize(y_train)
-    X_train_gen_student = generator.get_generator(
-        X_train_student.reshape((-1, 252, 1)), y_train, 1024, True
-    )
-
-    X_val_student = np.concatenate([X_val, outlier_train])
-    y_val_teacher = teacher.predict(X_val_student, batch_size=512, verbose=0)
-    y_val = loss(X_val_student, y_val_teacher)
-    y_val = np.log(y_val) * 32
-    y_val = quantize(y_val)
-    X_val_gen_student = generator.get_generator(
-        X_val_student.reshape((-1, 252, 1)), y_val, 1024, False
-    )
-
-    # Knowledge Distillation and Quantization Aware Training
-    if not eval_only:
-        cicada_v1 = CicadaV1((252,)).get_model()
-        cicada_v1 = train_model(
-            cicada_v1,
-            X_train_gen_student,
-            X_val_gen_student,
-            "cicada-v1",
-            lr=0.01,
-            epochs=1024,
-            loss="mae",
-        )
-        cicada_v2 = CicadaV2((252,)).get_model()
-        cicada_v2 = train_model(
-            cicada_v2,
-            X_train_gen_student,
-            X_val_gen_student,
-            "cicada-v2",
-            lr=0.01,
-            epochs=1024,
-            loss="mae",
-        )
-
-    cicada_v1 = keras.models.load_model("saved_models/cicada-v1")
-    cicada_v2 = keras.models.load_model("saved_models/cicada-v2")
 
     # Evaluation
     y_pred_background_teacher = teacher.predict(X_test, batch_size=512, verbose=0)
@@ -240,7 +254,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training(config, args.evaluate_only, args.verbose)
+    run_training(config, args.evaluate_only, verbose=args.verbose)
 
 
 if __name__ == "__main__":
