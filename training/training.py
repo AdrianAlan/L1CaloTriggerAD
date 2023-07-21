@@ -14,7 +14,7 @@ import yaml
 from pathlib import Path
 from tensorflow import keras
 from tensorflow.keras import Model
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger
 from tensorflow.keras.optimizers import Adam
 from qkeras import *
 from typing import List, Optional, TypedDict
@@ -90,19 +90,16 @@ def run_training(
         teacher = TeacherAutoencoder((18, 14, 1)).get_model()
         teacher.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
         t_mc = ModelCheckpoint(f"saved_models/{teacher.name}", save_best_only=True)
-        t_lr = ReduceLROnPlateau(factor=0.8, patience=10)
         t_log = CSVLogger(f"saved_models/{teacher.name}/training.log", append=True)
 
         cicada_v1 = CicadaV1((252,)).get_model()
         cicada_v1.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
         cv1_mc = ModelCheckpoint(f"saved_models/{cicada_v1.name}", save_best_only=True)
-        cv1_lr = ReduceLROnPlateau(factor=0.8, patience=50)
         cv1_log = CSVLogger(f"saved_models/{cicada_v1.name}/training.log", append=True)
 
         cicada_v2 = CicadaV2((252,)).get_model()
         cicada_v2.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
         cv2_mc = ModelCheckpoint(f"saved_models/{cicada_v2.name}", save_best_only=True)
-        cv2_lr = ReduceLROnPlateau(factor=0.8, patience=50)
         cv2_log = CSVLogger(f"saved_models/{cicada_v2.name}/training.log", append=True)
 
         for epoch in range(epochs):
@@ -124,7 +121,7 @@ def run_training(
                 s_gen_val,
                 epoch=10 * epoch,
                 steps=10,
-                callbacks=[cv1_mc, cv1_lr, cv1_log],
+                callbacks=[cv1_mc, cv1_log],
             )
             train_model(
                 cicada_v2,
@@ -132,7 +129,7 @@ def run_training(
                 s_gen_val,
                 epoch=10 * epoch,
                 steps=10,
-                callbacks=[cv2_mc, cv2_lr, cv2_log],
+                callbacks=[cv2_mc, cv2_log],
             )
 
         for model in [teacher, cicada_v1, cicada_v2]:
