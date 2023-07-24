@@ -55,6 +55,7 @@ def train_model(
     epoch: int = 1,
     steps: int = 1,
     callbacks=None,
+    verbose: bool=False,
 ) -> None:
     model.fit(
         gen_train,
@@ -63,7 +64,7 @@ def train_model(
         epochs=epoch + steps,
         validation_data=gen_val,
         callbacks=callbacks,
-        verbose=0,
+        verbose=verbose,
     )
 
 
@@ -108,7 +109,8 @@ def run_training(
                 gen_train,
                 gen_val,
                 epoch=epoch,
-                callbacks=[t_mc, t_lr, t_log],
+                callbacks=[t_mc, t_log],
+                verbose=verbose,
             )
 
             tmp_teacher = keras.models.load_model("saved_models/teacher")
@@ -122,6 +124,7 @@ def run_training(
                 epoch=10 * epoch,
                 steps=10,
                 callbacks=[cv1_mc, cv1_log],
+                verbose=verbose,
             )
             train_model(
                 cicada_v2,
@@ -130,6 +133,7 @@ def run_training(
                 epoch=10 * epoch,
                 steps=10,
                 callbacks=[cv2_mc, cv2_log],
+                verbose=verbose,
             )
 
         for model in [teacher, cicada_v1, cicada_v2]:
@@ -144,7 +148,7 @@ def run_training(
 
     # Comparison between original and reconstructed inputs
     X_example = X_test[:1]
-    y_example = teacher.predict(X_example, verbose=0)
+    y_example = teacher.predict(X_example, verbose=verbose)
     draw.plot_reconstruction_results(
         X_example,
         y_example,
@@ -152,7 +156,7 @@ def run_training(
         name="comparison-background",
     )
     X_example = X_signal["SUSYGGBBH"][:1]
-    y_example = teacher.predict(X_example, verbose=0)
+    y_example = teacher.predict(X_example, verbose=verbose)
     draw.plot_reconstruction_results(
         X_example,
         y_example,
@@ -161,13 +165,13 @@ def run_training(
     )
 
     # Evaluation
-    y_pred_background_teacher = teacher.predict(X_test, batch_size=512, verbose=0)
+    y_pred_background_teacher = teacher.predict(X_test, batch_size=512, verbose=verbose)
     y_loss_background_teacher = loss(X_test, y_pred_background_teacher)
     y_loss_background_cicada_v1 = cicada_v1.predict(
-        X_test.reshape(-1, 252, 1), batch_size=512, verbose=0
+        X_test.reshape(-1, 252, 1), batch_size=512, verbose=verbose
     )
     y_loss_background_cicada_v2 = cicada_v2.predict(
-        X_test.reshape(-1, 252, 1), batch_size=512, verbose=0
+        X_test.reshape(-1, 252, 1), batch_size=512, verbose=verbose
     )
 
     results_teacher, results_cicada_v1, results_cicada_v2 = dict(), dict(), dict()
@@ -180,12 +184,12 @@ def run_training(
     for name, data in X_signal.items():
         inputs.append(np.concatenate((data, X_test)))
 
-        y_loss_teacher = loss(data, teacher.predict(data, batch_size=512, verbose=0))
+        y_loss_teacher = loss(data, teacher.predict(data, batch_size=512, verbose=verbose))
         y_loss_cicada_v1 = cicada_v1.predict(
-            data.reshape(-1, 252, 1), batch_size=512, verbose=0
+            data.reshape(-1, 252, 1), batch_size=512, verbose=verbose
         )
         y_loss_cicada_v2 = cicada_v2.predict(
-            data.reshape(-1, 252, 1), batch_size=512, verbose=0
+            data.reshape(-1, 252, 1), batch_size=512, verbose=verbose
         )
         results_teacher[name] = y_loss_teacher
         results_cicada_v1[name] = y_loss_cicada_v1
