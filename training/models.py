@@ -1,7 +1,3 @@
-import tensorflow as tf
-import qkeras
-
-from qkeras import *
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
     Activation,
@@ -14,6 +10,7 @@ from tensorflow.keras.layers import (
     Reshape,
     UpSampling2D,
 )
+from qkeras import QActivation, QConv2D, QDense, QDenseBatchnorm, quantized_bits
 
 
 class TeacherAutoencoder:
@@ -57,15 +54,15 @@ class CicadaV1:
         inputs = Input(shape=self.input_shape, name="inputs_")
         x = QDenseBatchnorm(
             16,
-            kernel_quantizer=quantized_bits(16, 4, 1, alpha=1.0),
-            use_bias=False,
+            kernel_quantizer=quantized_bits(8, 1, 1, alpha=1.0),
+            bias_quantizer=quantized_bits(8, 3, 1, alpha=1.0),
             name="dense1",
         )(inputs)
-        x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
-        x = Dropout(0.125)(x)
+        x = QActivation("quantized_relu(10, 6)", name="relu1")(x)
+        x = Dropout(1 / 8)(x)
         x = QDense(
             1,
-            kernel_quantizer=quantized_bits(16, 2, 1, alpha=1.0),
+            kernel_quantizer=quantized_bits(12, 3, 1, alpha=1.0),
             use_bias=False,
             name="dense2",
         )(x)
@@ -86,22 +83,23 @@ class CicadaV2:
             strides=2,
             padding="valid",
             use_bias=False,
-            kernel_quantizer=quantized_bits(16, 4, 1, alpha="auto"),
+            kernel_quantizer=quantized_bits(12, 3, 1, alpha=1.0),
             name="conv",
         )(x)
-        x = QActivation("quantized_relu(10, 4)", name="relu0")(x)
+        x = QActivation("quantized_relu(10, 6)", name="relu0")(x)
         x = Flatten(name="flatten")(x)
         x = Dropout(1 / 9)(x)
         x = QDenseBatchnorm(
             16,
-            kernel_quantizer=quantized_bits(16, 4, 1, alpha=1.0),
-            use_bias=False,
+            kernel_quantizer=quantized_bits(8, 1, 1, alpha=1.0),
+            bias_quantizer=quantized_bits(8, 3, 1, alpha=1.0),
             name="dense1",
         )(x)
-        x = QActivation("quantized_relu(16, 4)", name="relu1")(x)
+        x = QActivation("quantized_relu(10, 6)", name="relu1")(x)
+        x = Dropout(1 / 8)(x)
         x = QDense(
             1,
-            kernel_quantizer=quantized_bits(16, 2, 1, alpha=1.0),
+            kernel_quantizer=quantized_bits(12, 3, 1, alpha=1.0),
             use_bias=False,
             name="dense2",
         )(x)
