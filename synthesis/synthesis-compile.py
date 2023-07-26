@@ -19,7 +19,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from qkeras import *
 
-tf.compat.v1.logging.set_verbity(tf.compat.v1.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 class EliminateLinearActivationCustom(OptimizerPass):
