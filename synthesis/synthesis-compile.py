@@ -33,18 +33,6 @@ class EliminateLinearActivationCustom(OptimizerPass):
         return True
 
 
-def load_keras_model(model_path: str):
-    # Load the original model
-    org_model = from_pretrained_keras(model_path)
-
-    # Rename the input and fix outputs
-    x = input_ = Input(shape=(252,), name="inputs_")
-    for layer in org_model.layers[1:]:
-        x = layer(x)
-    output = Activation("relu", name="outputs")(x)
-    return Model(input_, output, name="cicada"), org_model
-
-
 def get_datasets(dataset_paths):
     datasets = {}
     for dataset_path in dataset_paths:
@@ -387,7 +375,7 @@ def main():
     )
 
     # Load QKeras model
-    keras_model, org_model = load_keras_model(
+    keras_model = from_pretrained_keras(
         "cicada-project/cicada-v{}".format(".".join(config["version"].split(".")[:-1]))
     )
 
@@ -418,7 +406,7 @@ def main():
         )
 
     # Tune result and accumulator precision
-    keras_trace = hls4ml.model.profiling.get_ymodel_keras(org_model, test_vector)
+    keras_trace = hls4ml.model.profiling.get_ymodel_keras(keras_model, test_vector)
     adjust_result_precision(
         config["layers_to_tune"],
         hls_config,
