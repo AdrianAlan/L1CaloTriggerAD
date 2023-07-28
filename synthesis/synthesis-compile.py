@@ -389,22 +389,6 @@ def main():
     test_vector = np.vstack(list(datasets.values()))
     keras_out = keras_model.predict(test_vector)
 
-    # Tune BatchNorm parameters in v1:
-    bn_layers = [
-        i for i in hls_model.get_layers() if "BatchNormalization" in type(i).__name__
-    ]
-    if len(bn_layers):
-        bn_layer = bn_layers[0]
-        hls_config = tune_batch_norm_precision(
-            "QBN1",
-            bn_layer,
-            hls_config,
-            test_vector,
-            keras_model,
-            keras_out,
-            accepted_error=config["accepted_error"],
-        )
-
     # Tune result and accumulator precision
     keras_trace = hls4ml.model.profiling.get_ymodel_keras(keras_model, test_vector)
     adjust_result_precision(
