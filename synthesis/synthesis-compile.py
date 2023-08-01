@@ -354,10 +354,7 @@ def cleanup():
 def main():
     config = load_configuration()
 
-    # Update default optimizers in hls4ml
-    hls4ml.model.flow.flow.update_flow(
-        "convert", remove_optimizers=["qkeras_factorize_alpha"]
-    )
+    # Workaround for linear activation layer removal
     hls4ml.model.flow.flow.update_flow(
         "optimize", remove_optimizers=["eliminate_linear_activation"]
     )
@@ -366,12 +363,6 @@ def main():
     )
     hls4ml.model.flow.flow.update_flow(
         "convert", add_optimizers=["overwrite_eliminate_linear_activation"]
-    )
-    hls4ml.model.optimizer.get_optimizer("output_rounding_saturation_mode").configure(
-        layers=config["optimizer_sat_layers"],
-        rounding_mode="AP_RND",
-        saturation_mode="AP_SAT",
-        saturation_bits="AP_SAT",
     )
 
     # Load QKeras model
