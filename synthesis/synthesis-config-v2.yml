@@ -1,15 +1,6 @@
 ---
 mplstyle: ../plots/physics.mplstyle
-version: 2.1.0
-accepted_error: 0.5
-optimizer_sat_layers:
- - relu1
- - relu2
- - outputs
-layers_to_tune:
- - conv
- - dense1
- - output
+version: 2.1.2
 datasets:
  - /eos/project/c/cicada-project/data/2023/Signal/SUEP.h5
  - /eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5

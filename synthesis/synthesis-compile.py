@@ -173,170 +173,6 @@ def testing(org_model, hls_model, datasets, version, mplstyle):
     )
 
 
-def search_for_best(
-    low,
-    high,
-    layer,
-    parameter,
-    hls_config,
-    test_vector,
-    keras_model,
-    keras_out,
-    accepted_error,
-    int_=True,
-    other=32,
-):
-    while low < high:
-        mid = (high + low) // 2
-        precision = [mid, other]
-        if int_:
-            precision = precision[::-1]
-        hls_config["LayerName"][layer]["Precision"][
-            parameter
-        ] = "ap_fixed<{}, {}>".format(*precision)
-        hls_model = convert_to_hls4ml_model(keras_model, hls_config, version="debug")
-        hls4ml_out = hls_model.predict(test_vector)
-        if np.all(np.abs(hls4ml_out - keras_out) < accepted_error):
-            high = mid
-        else:
-            low = mid + 1
-    return low
-
-
-def adjust_additional_parameter(
-    layer_name,
-    parameter,
-    int_,
-    hls_config,
-    test_vector,
-    keras_model,
-    keras_out,
-    accepted_error,
-):
-    high_precision = re.findall(
-        "\d+", hls_config["LayerName"][layer_name]["Precision"][parameter]
-    )
-    decimal = search_for_best(
-        int_,
-        int(high_precision[0]),
-        layer_name,
-        parameter,
-        hls_config,
-        test_vector,
-        keras_model,
-        keras_out,
-        accepted_error,
-        False,
-        other=int_,
-    )
-    hls_config["LayerName"][layer_name]["Precision"][
-        parameter
-    ] = "ap_fixed<{}, {}>".format(decimal, int_)
-    return hls_config
-
-
-def tune_batch_norm_precision(
-    layer_name,
-    bn_layer,
-    hls_config,
-    test_vector,
-    keras_model,
-    keras_out,
-    accepted_error,
-):
-    weights = [*bn_layer.get_weights()]
-    int_scale = int(np.ceil(np.log(np.ceil(np.max(np.abs(weights[0].data))))) + 1)
-    int_bias = int(np.ceil(np.log(np.ceil(np.max(np.abs(weights[1].data))))) + 1)
-    hls_config = adjust_additional_parameter(
-        layer_name,
-        "scale",
-        int_scale,
-        hls_config,
-        test_vector,
-        keras_model,
-        keras_out,
-        accepted_error,
-    )
-    hls_config = adjust_additional_parameter(
-        layer_name,
-        "bias",
-        int_bias,
-        hls_config,
-        test_vector,
-        keras_model,
-        keras_out,
-        accepted_error,
-    )
-    return hls_config
-
-
-def adjust_result_precision(
-    layers, hls_config, profiling, test_vector, keras_model, keras_out, accepted_error
-):
-    for layer in layers[:-1]:
-        result_precision = re.findall(
-            "\d+", hls_config["LayerName"][layer]["Precision"]["result"]
-        )
-        int_ = math.ceil(math.log(int(np.max(np.abs(profiling[layer]))) + 1, 2)) + 1
-        decimal = search_for_best(
-            int_,
-            int(result_precision[0]),
-            layer,
-            "result",
-            hls_config,
-            test_vector,
-            keras_model,
-            keras_out,
-            accepted_error,
-            False,
-            other=int_,
-        )
-        hls_config["LayerName"][layer]["Precision"][
-            "result"
-        ] = "ap_fixed<{}, {}>".format(decimal, int_)
-    hls_config["LayerName"][layers[-1]]["Precision"]["result"] = "ap_fixed<16, 8>"
-    return hls_config
-
-
-def adjust_accumulator_precision(
-    layers, hls_config, test_vector, keras_model, keras_out, max_bits, accepted_error
-):
-    for layer in layers:
-        result_precision = re.findall(
-            "\d+", hls_config["LayerName"][layer]["Precision"]["result"]
-        )
-        int_ = search_for_best(
-            int(result_precision[0]),
-            max_bits,
-            layer,
-            "accum",
-            hls_config,
-            test_vector,
-            keras_model,
-            keras_out,
-            accepted_error,
-            True,
-            other=max_bits,
-        )
-        decimal = search_for_best(
-            max(int_, int(result_precision[1])),
-            max_bits,
-            layer,
-            "accum",
-            hls_config,
-            test_vector,
-            keras_model,
-            keras_out,
-            accepted_error,
-            False,
-            other=int_,
-        )
-        hls_config["LayerName"][layer]["Precision"][
-            "accum"
-        ] = "ap_fixed<{}, {}>".format(decimal, int_)
-    return hls_config
-
-
 def load_configuration():
     parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
     parser.add_argument("--config", "-c", type=Path, help="Configuration file")
@@ -369,40 +205,14 @@ def main():
     keras_model = from_pretrained_keras(
         "cicada-project/cicada-v{}".format(".".join(config["version"].split(".")[:-1]))
     )
-
     # Genrate hls4ml config
     hls_config = get_hls_config(keras_model)
+
     # Genrate hls4ml model
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, config["version"])
 
     # Gather evaluation datasets
     datasets = get_datasets(config["datasets"])
-    test_vector = np.vstack(list(datasets.values()))
-    keras_out = keras_model.predict(test_vector)
-
-    # Tune result and accumulator precision
-    keras_trace = hls4ml.model.profiling.get_ymodel_keras(keras_model, test_vector)
-    adjust_result_precision(
-        config["layers_to_tune"],
-        hls_config,
-        keras_trace,
-        test_vector,
-        keras_model,
-        keras_out,
-        accepted_error=config["accepted_error"],
-    )
-    adjust_accumulator_precision(
-        config["layers_to_tune"],
-        hls_config,
-        test_vector,
-        keras_model,
-        keras_out,
-        48,
-        accepted_error=config["accepted_error"],
-    )
-
-    # Recomple the model
-    hls_model = convert_to_hls4ml_model(keras_model, hls_config, config["version"])
 
     # Final tests of the final configuration
     testing(keras_model, hls_model, datasets, config["version"], config["mplstyle"])
