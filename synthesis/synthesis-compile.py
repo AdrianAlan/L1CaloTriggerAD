@@ -42,19 +42,32 @@ def get_datasets(dataset_paths):
     return datasets
 
 
-def get_hls_config(keras_model, default_precision="fixed<48, 24>"):
-    hls_config = hls4ml.utils.config_from_keras_model(
-        keras_model, granularity="name", default_precision=default_precision
-    )
+def get_hls_config(keras_model, version):
+    hls_config = hls4ml.utils.config_from_keras_model(keras_model, granularity="name")
+
     hls_config["Model"]["Strategy"] = "Latency"
+
+    for layer in hls_config["LayerName"].keys():
+        hls_config["LayerName"][layer]["ReuseFactor"] = 2
+
     hls_config["LayerName"]["inputs_"]["Precision"]["result"] = "ap_uint<10>"
-    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
-    # Additinal parameters needed for CICADAv2
-    if "conv" in hls_config["LayerName"]:
+    if version.startswith("1"):
+        hls_config["LayerName"]["dense1"]["Precision"]["result"] = "ap_fixed<26, 20>"
+        hls_config["LayerName"]["dense1"]["Precision"]["accum"] = "ap_fixed<26, 20>"
+    else:
         hls_config["LayerName"]["conv"]["Strategy"] = "Resource"
         hls_config["LayerName"]["conv"]["ReuseFactor"] = 1
-        hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 12
-    hls_config["LayerName"]["dense1"]["ReuseFactor"] = 4
+        hls_config["LayerName"]["conv"]["ParallelizationFactor"] = 21
+        hls_config["LayerName"]["conv"]["Precision"]["result"] = "ap_fixed<30, 22>"
+        hls_config["LayerName"]["conv"]["Precision"]["accum"] = "ap_fixed<30, 22>"
+        hls_config["LayerName"]["dense1"]["Precision"]["result"] = "ap_fixed<26, 14>"
+        hls_config["LayerName"]["dense1"]["Precision"]["accum"] = "ap_fixed<26, 14>"
+
+    hls_config["LayerName"]["dense2"]["Precision"]["result"] = "ap_fixed<26, 14>"
+    hls_config["LayerName"]["dense2"]["Precision"]["accum"] = "ap_fixed<26, 14>"
+
+    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
+
     return hls_config
 
 
