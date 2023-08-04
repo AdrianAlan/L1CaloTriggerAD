@@ -1,7 +1,6 @@
 import argparse
 import glob
 import h5py
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -15,8 +14,6 @@ from hls4ml.model.layers import Activation as ActivationHLS
 from hls4ml.model.optimizer import OptimizerPass, register_pass
 from huggingface_hub import from_pretrained_keras
 from sklearn.metrics import roc_curve, auc
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input
 from qkeras import *
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
