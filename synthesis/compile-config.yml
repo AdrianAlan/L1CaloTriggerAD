@@ -1,6 +1,4 @@
 ---
-mplstyle: ../plots/physics.mplstyle
-version: 2.1.2
 datasets:
  - /eos/project/c/cicada-project/data/2023/Signal/SUEP.h5
  - /eos/project/c/cicada-project/data/2023/Signal/H_ToLongLived.h5

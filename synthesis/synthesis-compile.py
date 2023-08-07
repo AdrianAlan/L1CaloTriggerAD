@@ -30,8 +30,9 @@ class EliminateLinearActivationCustom(OptimizerPass):
         return True
 
 
-def get_datasets(dataset_paths):
+def get_datasets(dataset_config):
     datasets = {}
+    dataset_paths = yaml.safe_load(open(dataset_config))
     for dataset_path in dataset_paths:
         signal_name = dataset_path.split("/")[-1][:-3]
         X_test = h5py.File(dataset_path, "r")["CaloRegions"][:].reshape(-1, 252)
@@ -185,10 +186,11 @@ def testing(org_model, hls_model, datasets, version, mplstyle):
 
 def load_configuration():
     parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
-    parser.add_argument("--config", "-c", type=Path, help="Configuration file")
+    parser.add_argument("--datasets", "-d", type=Path, help="Path to yml with datasets")
+    parser.add_argument("--style", "-s", type=Path, help="Path to plotting style")
+    parser.add_argument("--version", "-v", type=str, help="CICADA version")
     args = parser.parse_args()
-    config = yaml.safe_load(open(args.config))
-    return config
+    return args.datasets, args.style, args.version
 
 
 def cleanup():
@@ -198,7 +200,7 @@ def cleanup():
 
 
 def main():
-    config = load_configuration()
+    dataset_config, style, version = load_configuration()
 
     # Workaround for linear activation layer removal
     hls4ml.model.flow.flow.update_flow(
@@ -213,19 +215,19 @@ def main():
 
     # Load QKeras model
     keras_model = from_pretrained_keras(
-        "cicada-project/cicada-v{}".format(".".join(config["version"].split(".")[:-1]))
+        "cicada-project/cicada-v{}".format(".".join(version.split(".")[:-1]))
     )
     # Genrate hls4ml config
     hls_config = get_hls_config(keras_model)
 
     # Genrate hls4ml model
-    hls_model = convert_to_hls4ml_model(keras_model, hls_config, config["version"])
+    hls_model = convert_to_hls4ml_model(keras_model, hls_config, version)
 
     # Gather evaluation datasets
-    datasets = get_datasets(config["datasets"])
+    datasets = get_datasets(dataset_config)
 
     # Final tests of the final configuration
-    testing(keras_model, hls_model, datasets, config["version"], config["mplstyle"])
+    testing(keras_model, hls_model, datasets, version, style)
 
     cleanup()
 
