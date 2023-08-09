@@ -64,8 +64,6 @@ def get_hls_config(keras_model, version):
     hls_config["LayerName"]["dense2"]["Precision"]["result"] = "ap_fixed<26, 14>"
     hls_config["LayerName"]["dense2"]["Precision"]["accum"] = "ap_fixed<26, 14>"
 
-    hls_config["LayerName"]["outputs"]["Precision"]["result"] = "ap_ufixed<16, 8>"
-
     return hls_config
 
 
