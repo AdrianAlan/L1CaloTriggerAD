@@ -32,7 +32,7 @@ class EliminateLinearActivationCustom(OptimizerPass):
 
 def get_datasets(dataset_config):
     datasets = {}
-    dataset_paths = yaml.safe_load(open(dataset_config))
+    dataset_paths = yaml.safe_load(open(dataset_config))["datasets"]
     for dataset_path in dataset_paths:
         signal_name = dataset_path.split("/")[-1][:-3]
         X_test = h5py.File(dataset_path, "r")["CaloRegions"][:].reshape(-1, 252)
@@ -194,7 +194,6 @@ def load_configuration():
 def cleanup():
     for f in glob.glob("*.tar.gz"):
         os.remove(f)
-    shutil.rmtree("cicada-vdebug")
 
 
 def main():
@@ -215,8 +214,9 @@ def main():
     keras_model = from_pretrained_keras(
         "cicada-project/cicada-v{}".format(".".join(version.split(".")[:-1]))
     )
+
     # Genrate hls4ml config
-    hls_config = get_hls_config(keras_model)
+    hls_config = get_hls_config(keras_model, version)
 
     # Genrate hls4ml model
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, version)
