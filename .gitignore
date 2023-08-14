@@ -133,4 +133,3 @@ dmypy.json
 *.pth
 *.yml
 
-training/saved_models

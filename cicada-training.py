@@ -21,7 +21,7 @@ from typing import List, Optional, TypedDict
 
 from generator import RegionETGenerator
 from models import TeacherAutoencoder, CicadaV1, CicadaV2
-from plotting import Draw
+from drawing import Draw
 from utils import IsValidFile
 
 tf.get_logger().setLevel("ERROR")
@@ -55,7 +55,7 @@ def train_model(
     epoch: int = 1,
     steps: int = 1,
     callbacks=None,
-    verbose: bool=False,
+    verbose: bool = False,
 ) -> None:
     model.fit(
         gen_train,
@@ -184,7 +184,9 @@ def run_training(
     for name, data in X_signal.items():
         inputs.append(np.concatenate((data, X_test)))
 
-        y_loss_teacher = loss(data, teacher.predict(data, batch_size=512, verbose=verbose))
+        y_loss_teacher = loss(
+            data, teacher.predict(data, batch_size=512, verbose=verbose)
+        )
         y_loss_cicada_v1 = cicada_v1.predict(
             data.reshape(-1, 252, 1), batch_size=512, verbose=verbose
         )

@@ -4,7 +4,7 @@ import yaml
 
 from generator import RegionETGenerator
 from pathlib import Path
-from plotting import Draw
+from drawing import Draw
 from utils import IsValidFile
 from typing import List, Optional
 
