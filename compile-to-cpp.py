@@ -9,6 +9,7 @@ import shutil
 import yaml
 import hls4ml
 
+from generator import RegionETGenerator
 from pathlib import Path
 from hls4ml.model.layers import Activation as ActivationHLS
 from hls4ml.model.optimizer import OptimizerPass, register_pass
@@ -28,16 +29,6 @@ class EliminateLinearActivationCustom(OptimizerPass):
     def transform(self, model, node):
         model.remove_node(node)
         return True
-
-
-def get_datasets(dataset_config):
-    datasets = {}
-    dataset_paths = yaml.safe_load(open(dataset_config))["datasets"]
-    for dataset_path in dataset_paths:
-        signal_name = dataset_path.split("/")[-1][:-3]
-        X_test = h5py.File(dataset_path, "r")["CaloRegions"][:].reshape(-1, 252)
-        datasets[signal_name] = X_test
-    return datasets
 
 
 def get_hls_config(keras_model, version):
@@ -83,13 +74,21 @@ def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     return hls_model
 
 
-def testing(org_model, hls_model, datasets, version, mplstyle):
+def testing(
+    org_model, hls_model, dataset_signals, dataset_background, version, mplstyle
+):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
-    for dataset_name, test_vectors in datasets.items():
+    for dataset_name, test_vectors in dataset_signals.items():
+        test_vectors = test_vectors.reshape(-1, 252)
         scores_hls4ml = hls_model.predict(test_vectors)
         scores_keras = org_model.predict(test_vectors)
         scores["scores_hls4ml"][dataset_name] = scores_hls4ml.flatten()
         scores["scores_keras"][dataset_name] = scores_keras.flatten()
+    test_vectors = dataset_background.reshape(-1, 252)
+    scores_hls4ml = hls_model.predict(test_vectors)
+    scores_keras = org_model.predict(test_vectors)
+    scores["scores_hls4ml"]["Background"] = scores_hls4ml.flatten()
+    scores["scores_keras"]["Background"] = scores_keras.flatten()
 
     scores_hls4ml = np.concatenate(list(scores["scores_hls4ml"].values()))
     scores_keras = np.concatenate(list(scores["scores_keras"].values()))
@@ -126,8 +125,8 @@ def testing(org_model, hls_model, datasets, version, mplstyle):
     tpr_model = []
     cmap = ["green", "red", "blue", "orange", "brown"]
 
-    scores_keras_normal = scores["scores_keras"]["EZB0_RunC_2"]
-    scores_hls4ml_normal = scores["scores_hls4ml"]["EZB0_RunC_2"]
+    scores_keras_normal = scores["scores_keras"]["Background"]
+    scores_hls4ml_normal = scores["scores_hls4ml"]["Background"]
 
     for dataset_name, color in zip(list(scores["scores_keras"].keys())[:-1], cmap):
         scores_keras_anomaly = scores["scores_keras"][dataset_name]
@@ -184,11 +183,11 @@ def testing(org_model, hls_model, datasets, version, mplstyle):
 
 def load_configuration():
     parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
-    parser.add_argument("--datasets", "-d", type=Path, help="Path to yml with datasets")
+    parser.add_argument("--config", "-d", type=Path, help="Path to config")
     parser.add_argument("--style", "-s", type=Path, help="Path to plotting style")
     parser.add_argument("--version", "-v", type=str, help="CICADA version")
     args = parser.parse_args()
-    return args.datasets, args.style, args.version
+    return args.config, args.style, args.version
 
 
 def cleanup():
@@ -197,7 +196,7 @@ def cleanup():
 
 
 def main():
-    dataset_config, style, version = load_configuration()
+    config, style, version = load_configuration()
 
     # Workaround for linear activation layer removal
     hls4ml.model.flow.flow.update_flow(
@@ -222,10 +221,14 @@ def main():
     hls_model = convert_to_hls4ml_model(keras_model, hls_config, version)
 
     # Gather evaluation datasets
-    datasets = get_datasets(dataset_config)
+    datasets = [i["path"] for i in config["background"] if i["use"]]
+    datasets = [path for paths in datasets for path in paths]
+    gen = RegionETGenerator()
+    _, _, dataset_background = gen.get_data_split(datasets)
+    dataset_signal = gen.get_benchmark(config["signal"], filter_acceptance=False)
 
     # Final tests of the final configuration
-    testing(keras_model, hls_model, datasets, version, style)
+    testing(keras_model, hls_model, dataset_signal, dataset_background, version, style)
 
     cleanup()
 
