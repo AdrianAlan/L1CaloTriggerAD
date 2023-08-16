@@ -71,7 +71,7 @@ def train_model(
 def run_training(
     config: dict, eval_only: bool, epochs: int = 100, verbose: bool = False
 ) -> None:
-    draw = Draw(Path("plots"))
+    draw = Draw()
 
     datasets = [i["path"] for i in config["background"] if i["use"]]
     datasets = [path for paths in datasets for path in paths]

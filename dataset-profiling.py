@@ -10,7 +10,7 @@ from typing import List, Optional
 
 
 def dataset_profiling(datasets: dict, verbose: bool) -> None:
-    draw = Draw(Path("plots"))
+    draw = Draw()
     generator = RegionETGenerator()
     deposits, labels = [], []
     for dataset in datasets:

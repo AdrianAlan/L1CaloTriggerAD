@@ -1,14 +1,13 @@
 import argparse
 import glob
 import h5py
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import tensorflow as tf
-import shutil
 import yaml
 import hls4ml
 
+from drawing import Draw
 from generator import RegionETGenerator
 from pathlib import Path
 from hls4ml.model.layers import Activation as ActivationHLS
@@ -74,120 +73,41 @@ def convert_to_hls4ml_model(keras_model, hls_config, version="1.0.0"):
     return hls_model
 
 
-def testing(
-    org_model, hls_model, dataset_signals, dataset_background, version, mplstyle
-):
+def testing(keras_model, hls_model, dataset_signals, dataset_background, version):
     scores = {"scores_hls4ml": {}, "scores_keras": {}}
     for dataset_name, test_vectors in dataset_signals.items():
         test_vectors = test_vectors.reshape(-1, 252)
         scores_hls4ml = hls_model.predict(test_vectors)
-        scores_keras = org_model.predict(test_vectors)
+        scores_keras = keras_model.predict(test_vectors)
         scores["scores_hls4ml"][dataset_name] = scores_hls4ml.flatten()
         scores["scores_keras"][dataset_name] = scores_keras.flatten()
     test_vectors = dataset_background.reshape(-1, 252)
     scores_hls4ml = hls_model.predict(test_vectors)
-    scores_keras = org_model.predict(test_vectors)
+    scores_keras = keras_model.predict(test_vectors)
     scores["scores_hls4ml"]["Background"] = scores_hls4ml.flatten()
     scores["scores_keras"]["Background"] = scores_keras.flatten()
 
     scores_hls4ml = np.concatenate(list(scores["scores_hls4ml"].values()))
     scores_keras = np.concatenate(list(scores["scores_keras"].values()))
 
-    # Load plottling style
-    plt.style.use(mplstyle)
-
-    plt.xlabel("Anomaly Score, $S$", fontsize=18)
-    plt.ylabel("Error, $|S_{Keras} - S_{hls4ml}|$", fontsize=18)
-    plt.scatter(scores_keras, np.abs(scores_keras - scores_hls4ml), s=1)
-    plt.savefig("plots/synthesis_error_v{}.png".format(version), bbox_inches="tight")
-    plt.cla()
-    plt.clf()
-    plt.close()
-
-    plt.hist(
-        scores_keras - scores_hls4ml,
-        fc="none",
-        histtype="step",
-        label="Error distribution",
-        bins=100,
+    # Generate plots
+    draw = Draw()
+    name = keras_model.name
+    draw.plot_compilation_error(scores_keras, scores_hls4ml, name)
+    draw.plot_compilation_error_distribution(scores_keras, scores_hls4ml, name)
+    draw.plot_roc_curve_comparison(
+        scores["scores_keras"], scores["scores_hls4ml"], name
     )
-    plt.yscale("log")
-    plt.xlabel("Error, $S_{Keras} - S_{hls4ml}$", fontsize=18)
-    plt.ylabel("Number of samples", fontsize=18)
-    plt.savefig(
-        "plots/synthesis_error_dist_v{}.png".format(version), bbox_inches="tight"
-    )
-    plt.cla()
-    plt.clf()
-    plt.close()
-
-    fpr_model = []
-    tpr_model = []
-    cmap = ["green", "red", "blue", "orange", "brown"]
-
-    scores_keras_normal = scores["scores_keras"]["Background"]
-    scores_hls4ml_normal = scores["scores_hls4ml"]["Background"]
-
-    for dataset_name, color in zip(list(scores["scores_keras"].keys())[:-1], cmap):
-        scores_keras_anomaly = scores["scores_keras"][dataset_name]
-        scores_hls4ml_anomaly = scores["scores_hls4ml"][dataset_name]
-
-        y_true = np.append(
-            np.zeros(len(scores_keras_normal)), np.ones(len(scores_hls4ml_anomaly))
-        )
-        y_score_keras = np.append(scores_keras_normal, scores_keras_anomaly)
-        y_score_hls = np.append(scores_hls4ml_normal, scores_hls4ml_anomaly)
-
-        for y_scores, model, ls in zip(
-            [y_score_keras, y_score_hls], ["Keras", "hls4ml"], ["-", "--"]
-        ):
-            fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-            plt.plot(
-                fpr * 28.61,
-                tpr,
-                linestyle=ls,
-                color=color,
-                label="{0}: {1}, AUC = {2:.4f}".format(
-                    model, dataset_name, auc(fpr, tpr)
-                ),
-            )
-
-    plt.plot(
-        [0.003, 0.003],
-        [0, 1],
-        linestyle="--",
-        color="black",
-        label="3 kHz trigger rate",
-    )
-    plt.xlim([0.0002861, 28.61])
-    plt.ylim([0.01, 1.0])
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("Trigger Rate (MHz)")
-    plt.ylabel("Signal Efficiency")
-    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    plt.savefig(
-        "plots/synthesis_comparison_v{}.png".format(version), bbox_inches="tight"
-    )
-    plt.cla()
-    plt.clf()
-    plt.close()
-
-    hls4ml.utils.plot_model(
-        hls_model,
-        show_shapes=True,
-        show_precision=True,
-        to_file="plots/synthesis_model_v{}.png".format(version),
-    )
+    draw.plot_cpp_model(hls_model, name)
 
 
 def load_configuration():
     parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
     parser.add_argument("--config", "-d", type=Path, help="Path to config")
-    parser.add_argument("--style", "-s", type=Path, help="Path to plotting style")
     parser.add_argument("--version", "-v", type=str, help="CICADA version")
     args = parser.parse_args()
-    return args.config, args.style, args.version
+    config = yaml.safe_load(open(args.config))
+    return config, args.version
 
 
 def cleanup():
@@ -196,7 +116,7 @@ def cleanup():
 
 
 def main():
-    config, style, version = load_configuration()
+    config, version = load_configuration()
 
     # Workaround for linear activation layer removal
     hls4ml.model.flow.flow.update_flow(
@@ -228,7 +148,7 @@ def main():
     dataset_signal = gen.get_benchmark(config["signal"], filter_acceptance=False)
 
     # Final tests of the final configuration
-    testing(keras_model, hls_model, dataset_signal, dataset_background, version, style)
+    testing(keras_model, hls_model, dataset_signal, dataset_background, version)
 
     cleanup()
 
