@@ -57,8 +57,9 @@ class RegionETGenerator:
 
     def get_benchmark(
         self, datasets: dict, filter_acceptance=True
-    ) -> dict[str, npt.NDArray]:
+    ) -> (dict[str, npt.NDArray], dict[str, float]):
         signals = {}
+        acceptance = []
         for dataset in datasets:
             if not dataset["use"]:
                 continue
@@ -66,12 +67,15 @@ class RegionETGenerator:
             for dataset_path in dataset["path"]:
                 X = h5py.File(dataset_path, "r")["CaloRegions"][:].astype("float32")
                 X = np.reshape(X, (-1, 18, 14, 1))
-                if filter_acceptance:
+                try:
                     flags = h5py.File(dataset_path, "r")["AcceptanceFlag"][:].astype(
                         "bool"
                     )
                     fraction = np.round(100 * sum(flags) / len(flags), 2)
-                    print(f"Accepted {signal_name} events: {fraction}%")
+                except KeyError:
+                    fraction = 100.0
+                if filter_acceptance:
                     X = X[flags]
                 signals[signal_name] = X
-        return signals
+                acceptance.append({"signal": signal_name, "acceptance": fraction})
+        return signals, acceptance

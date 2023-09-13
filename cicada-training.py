@@ -78,7 +78,7 @@ def run_training(
 
     gen = RegionETGenerator()
     X_train, X_val, X_test = gen.get_data_split(datasets)
-    X_signal = gen.get_benchmark(config["signal"], filter_acceptance=False)
+    X_signal, _ = gen.get_benchmark(config["signal"], filter_acceptance=False)
     gen_train = gen.get_generator(X_train, X_train, 512, True)
     gen_val = gen.get_generator(X_val, X_val, 512)
     outlier_train = gen.get_data(config["exposure"]["training"])

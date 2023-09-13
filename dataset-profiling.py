@@ -1,5 +1,6 @@
 import argparse
 import numpy as np
+import pandas as pd
 import yaml
 
 from generator import RegionETGenerator
@@ -9,49 +10,51 @@ from utils import IsValidFile
 from typing import List, Optional
 
 
-def dataset_profiling(datasets: dict, verbose: bool) -> None:
+def dataset_profiling(datasets: dict, prefix: str) -> None:
     draw = Draw()
     generator = RegionETGenerator()
     deposits, labels = [], []
     for dataset in datasets:
         name = dataset["name"]
-        labels.append(name)
-
-        X = generator.get_background(dataset["path"])
+        X = generator.get_data(dataset["path"])
+        print(f"{name} samples: {X.shape[0]}")
+        draw.plot_regional_deposits(
+            np.mean(X, axis=0).reshape(18, 14), np.mean(X, axis=(0, 1, 2, 3)), name
+        )
         deposits.append(X)
-
-        X_mean = np.mean(X, axis=0)
-        pT = np.mean(X_mean)
-        draw.plot_regional_deposits(X_mean.reshape(18, 14), pT, name)
-
-        if verbose:
-            print(f"{name} samples: {X.shape[0]}")
-
+        labels.append(name)
     draw.plot_deposits_distribution(
-        deposits, labels, name="Zero Bias Energy Distribution"
+        deposits, labels, name=f"{prefix} Energy Distribution"
     )
+
+
+def pprint_acceptance(datasets: dict) -> None:
+    generator = RegionETGenerator()
+    _, acceptance = generator.get_benchmark(datasets, True)
+    df = pd.DataFrame(acceptance)
+    df["acceptance"] = df["acceptance"].round(decimals=3).astype(str).add(" %")
+    print(df.to_markdown(index=False))
+
+
+def parse_arguments() -> dict:
+    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
+    parser.add_argument(
+        "--config",
+        "-c",
+        action=IsValidFile,
+        type=Path,
+        default="misc/config.yml",
+        help="Path to config file",
+    )
+    args = parser.parse_args()
+    return yaml.safe_load(open(args.config))
 
 
 def main(args_in: Optional[List[str]] = None) -> None:
-    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
-    parser.add_argument(
-        "-c",
-        "--config",
-        action=IsValidFile,
-        type=Path,
-        help="Path to the config file",
-        default="config.yml",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Output verbosity",
-        default=False,
-    )
-    args = parser.parse_args()
-    config = yaml.safe_load(open(args.config))
-    dataset_profiling(config["background"], args.verbose)
+    config = parse_arguments()
+    dataset_profiling(config["background"], "Background")
+    dataset_profiling(config["signal"], "Signal")
+    pprint_acceptance(config["signal"])
 
 
 if __name__ == "__main__":
