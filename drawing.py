@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import mplhep as hep
 import numpy as np
 import numpy.typing as npt
 import hls4ml
@@ -10,12 +11,10 @@ from typing import List
 
 
 class Draw:
-    def __init__(
-        self, output_dir: Path = "plots", style: Path = "misc/physics.mplstyle"
-    ):
+    def __init__(self, output_dir: Path = "plots"):
         self.output_dir = output_dir
         self.cmap = ["green", "red", "blue", "orange", "purple", "brown"]
-        plt.style.use(style)
+        hep.style.use("CMS")
 
     def _parse_name(self, name: str) -> str:
         return name.replace(" ", "-").lower()
@@ -39,13 +38,12 @@ class Draw:
     def plot_regional_deposits(
         self, deposits: npt.NDArray, mean: float, name: str
     ) -> None:
-        plt.figure(figsize=(7, 9))
         im = plt.imshow(
             deposits.reshape(18, 14), vmin=0, vmax=deposits.max(), cmap="Purples"
         )
         ax = plt.gca()
         cbar = ax.figure.colorbar(im, ax=ax)
-        cbar.ax.set_ylabel(r"E$_T$ (GeV)", rotation=-90, va="bottom")
+        cbar.ax.set_ylabel(r"E$_T$ (GeV)")  # , rotation=-90, va="bottom")
         plt.axis("off")
         plt.title(rf"Mean E$_T$ {mean: .2f} ({name})")
         plt.savefig(
@@ -57,7 +55,6 @@ class Draw:
     def plot_deposits_distribution(
         self, deposits: List[npt.NDArray], labels: List[str], name: str
     ) -> None:
-        plt.figure(figsize=(15, 10))
         for deposit, label in zip(deposits, labels):
             plt.hist(
                 deposit.reshape((-1)),
