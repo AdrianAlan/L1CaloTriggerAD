@@ -47,7 +47,41 @@ class Draw:
         plt.axis("off")
         plt.title(rf"Mean E$_T$ {mean: .2f} ({name})")
         plt.savefig(
-            f"{self.output_dir}/mean-deposits-{self._parse_name(name)}.png",
+            f"{self.output_dir}/profiling-mean-deposits-{self._parse_name(name)}.png",
+            bbox_inches="tight",
+        )
+        plt.close()
+
+    def plot_spacial_deposits_distribution(
+        self, deposits: List[npt.NDArray], labels: List[str], name: str
+    ) -> None:
+        ax1 = plt.subplot(121)
+        ax2 = plt.subplot(122)
+        for deposit, label in zip(deposits, labels):
+            bins = np.argwhere(deposit)
+            phi, eta = bins[:, 1], bins[:, 2]
+            ax1.hist(
+                eta + 4,
+                density=True,
+                facecolor=None,
+                bins=np.arange(4, 19),
+                label=label,
+                histtype="step",
+            )
+            ax2.hist(
+                phi,
+                density=True,
+                facecolor=None,
+                bins=np.arange(19),
+                label=label,
+                histtype="step",
+            )
+        ax1.set_ylabel("a.u.")
+        ax1.set_xlabel(r"i$\eta$")
+        ax2.set_xlabel(r"i$\phi$")
+        plt.legend(loc="best")
+        plt.savefig(
+            f"{self.output_dir}/profiling-spacial-{self._parse_name(name)}.png",
             bbox_inches="tight",
         )
         plt.close()
@@ -68,7 +102,8 @@ class Draw:
         plt.xlabel(r"E$_T$")
         plt.legend(loc="best")
         plt.savefig(
-            f"{self.output_dir}/{self._parse_name(name)}.png", bbox_inches="tight"
+            f"{self.output_dir}/profiling-deposits-{self._parse_name(name)}.png",
+            bbox_inches="tight",
         )
         plt.close()
 

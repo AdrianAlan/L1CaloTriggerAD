@@ -23,9 +23,8 @@ def dataset_profiling(datasets: dict, prefix: str) -> None:
         )
         deposits.append(X)
         labels.append(name)
-    draw.plot_deposits_distribution(
-        deposits, labels, name=f"{prefix} Energy Distribution"
-    )
+    draw.plot_spacial_deposits_distribution(deposits, labels, name=f"{prefix}")
+    draw.plot_deposits_distribution(deposits, labels, name=f"{prefix}")
 
 
 def pprint_acceptance(datasets: dict) -> None:

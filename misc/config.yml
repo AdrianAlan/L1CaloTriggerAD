@@ -2,25 +2,25 @@
 background:
  - path:
    - '/eos/project/c/cicada-project/data/2023/Background/ZB_RunA_0.h5'
-   name: '2023 ZeroBias Run A'
+   name: '2023 ZB Run A'
    use: False
  - path: 
    - '/eos/project/c/cicada-project/data/2023/Background/ZB_RunB_0.h5'
-   name: '2023 ZeroBias Run B'
+   name: '2023 ZB Run B'
    use: True
  - path:
    - '/eos/project/c/cicada-project/data/2023/Background/ZB_RunC_0.h5'
-   name: '2023 ZeroBias Run C'
+   name: '2023 ZB Run C'
    use: True
  - path:
    - '/eos/project/c/cicada-project/data/2023/Background/ZB_RunD_0.h5'
-   name: '2023 ZeroBias Run D'
+   name: '2023 ZB Run D'
    use: True
  - path:
    - '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_0.h5'
    - '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_1.h5'
    - '/eos/project/c/cicada-project/data/2023/Background/EZB0_RunC_2.h5' 
-   name: '2023 Ephemeral ZeroBias Run C'
+   name: '2023 EZB Run C'
    use: True
 
 signal:
