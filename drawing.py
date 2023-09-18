@@ -4,6 +4,8 @@ import numpy as np
 import numpy.typing as npt
 import hls4ml
 
+from matplotlib.patches import Patch
+from matplotlib.colors import ListedColormap
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
@@ -313,6 +315,59 @@ class Draw:
         plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
         plt.savefig(
             f"{self.output_dir}/compilation-roc-{self._parse_name(name)}.png",
+            bbox_inches="tight",
+        )
+        plt.close()
+
+    def plot_output_reference(self):
+        with open("misc/output-reference.txt") as f:
+            data = f.read()
+        data = np.array([row.split(",") for row in data.split("\n")[:-1]]).astype(
+            np.int8
+        )
+        data = np.flipud(data) - 1
+        legend_elements = [
+            Patch(
+                facecolor=self.cmap[0],
+                edgecolor=self.cmap[0],
+                label="Anomaly Detection, Integer Part",
+            ),
+            Patch(
+                facecolor=self.cmap[1],
+                edgecolor=self.cmap[1],
+                label="Anomaly Detection, Decimal Part",
+            ),
+            Patch(
+                facecolor=self.cmap[2], edgecolor=self.cmap[2], label="Heavy Ion Bit"
+            ),
+            Patch(facecolor=self.cmap[3], edgecolor=self.cmap[3], label="Reserved"),
+        ]
+        plt.figure(figsize=(25, 5))
+        plt.pcolor(
+            data, edgecolors="black", alpha=0.6, cmap=ListedColormap(self.cmap[:4])
+        )
+        plt.xticks([])
+        plt.yticks([])
+        for y in range(data.shape[0]):
+            for x in range(data.shape[1]):
+                plt.text(
+                    x + 0.5,
+                    y + 0.5,
+                    abs(y * 32 + x - 191),
+                    horizontalalignment="center",
+                    fontsize=16,
+                    verticalalignment="center",
+                )
+        plt.legend(
+            handles=legend_elements,
+            bbox_to_anchor=(0, 0),
+            loc="upper left",
+            frameon=False,
+            ncol=4,
+            borderaxespad=0,
+        )
+        plt.savefig(
+            f"{self.output_dir}/ugt-link-reference.png",
             bbox_inches="tight",
         )
         plt.close()

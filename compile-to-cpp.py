@@ -99,6 +99,7 @@ def testing(keras_model, hls_model, dataset_signals, dataset_background, version
         scores["scores_keras"], scores["scores_hls4ml"], name
     )
     draw.plot_cpp_model(hls_model, name)
+    draw.plot_output_reference()
 
 
 def load_configuration():
@@ -145,7 +146,7 @@ def main():
     datasets = [path for paths in datasets for path in paths]
     gen = RegionETGenerator()
     _, _, dataset_background = gen.get_data_split(datasets)
-    dataset_signal = gen.get_benchmark(config["signal"], filter_acceptance=False)
+    dataset_signal, _ = gen.get_benchmark(config["signal"], filter_acceptance=False)
 
     # Final tests of the final configuration
     testing(keras_model, hls_model, dataset_signal, dataset_background, version)
