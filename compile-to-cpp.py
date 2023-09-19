@@ -1,8 +1,12 @@
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
 import argparse
 import glob
 import h5py
 import numpy as np
-import os
 import tensorflow as tf
 import yaml
 import hls4ml
