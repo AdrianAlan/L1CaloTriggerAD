@@ -105,3 +105,17 @@ class CicadaV2:
         )(x)
         outputs = QActivation("quantized_relu(16, 8)", name="outputs")(x)
         return Model(inputs, outputs, name="cicada-v2")
+
+
+class SupervisedModel:
+    def __init__(self, input_shape: tuple, name: str):
+        self.input_shape = input_shape
+        self.name = name
+
+    def get_model(self):
+        inputs = Input(shape=self.input_shape, name="inputs_")
+        x = Conv2D(3, (3, 3), strides=2, activation="relu")(inputs)
+        x = Flatten()(x)
+        x = Dense(units=20, activation="relu")(x)
+        outputs = Dense(units=2, activation="softmax")(x)
+        return Model(inputs, outputs, name=self.name)

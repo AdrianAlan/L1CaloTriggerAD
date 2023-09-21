@@ -371,3 +371,30 @@ class Draw:
             bbox_inches="tight",
         )
         plt.close()
+
+    def plot_results_supervised(self, matrix, name, models, datasets):
+        plt.imshow(matrix, alpha=0.7, cmap="RdYlGn")
+        plt.xticks(
+            np.arange(len(models)),
+            labels=models,
+            rotation=45,
+            ha="right",
+            rotation_mode="anchor",
+        )
+        plt.yticks(np.arange(len(datasets)), labels=datasets)
+        for i in range(len(datasets)):
+            for j in range(len(models)):
+                text = plt.text(
+                    j,
+                    i,
+                    "{0:.3f}".format(matrix[i, j]),
+                    ha="center",
+                    va="center",
+                    color="black",
+                    size=16,
+                )
+        plt.savefig(
+            f"{self.output_dir}/supervised-{self._parse_name(name)}.png",
+            bbox_inches="tight",
+        )
+        plt.close()
