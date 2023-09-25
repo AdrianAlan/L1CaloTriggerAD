@@ -90,18 +90,18 @@ def run_training(
     if not eval_only:
         teacher = TeacherAutoencoder((18, 14, 1)).get_model()
         teacher.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
-        t_mc = ModelCheckpoint(f"saved_models/{teacher.name}", save_best_only=True)
-        t_log = CSVLogger(f"saved_models/{teacher.name}/training.log", append=True)
+        t_mc = ModelCheckpoint(f"models/{teacher.name}", save_best_only=True)
+        t_log = CSVLogger(f"models/{teacher.name}/training.log", append=True)
 
         cicada_v1 = CicadaV1((252,)).get_model()
         cicada_v1.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
-        cv1_mc = ModelCheckpoint(f"saved_models/{cicada_v1.name}", save_best_only=True)
-        cv1_log = CSVLogger(f"saved_models/{cicada_v1.name}/training.log", append=True)
+        cv1_mc = ModelCheckpoint(f"models/{cicada_v1.name}", save_best_only=True)
+        cv1_log = CSVLogger(f"models/{cicada_v1.name}/training.log", append=True)
 
         cicada_v2 = CicadaV2((252,)).get_model()
         cicada_v2.compile(optimizer=Adam(learning_rate=0.001), loss="mae")
-        cv2_mc = ModelCheckpoint(f"saved_models/{cicada_v2.name}", save_best_only=True)
-        cv2_log = CSVLogger(f"saved_models/{cicada_v2.name}/training.log", append=True)
+        cv2_mc = ModelCheckpoint(f"models/{cicada_v2.name}", save_best_only=True)
+        cv2_log = CSVLogger(f"models/{cicada_v2.name}/training.log", append=True)
 
         for epoch in range(epochs):
             train_model(
@@ -113,7 +113,7 @@ def run_training(
                 verbose=verbose,
             )
 
-            tmp_teacher = keras.models.load_model("saved_models/teacher")
+            tmp_teacher = keras.models.load_model("models/teacher")
             s_gen_train = get_student_targets(tmp_teacher, gen, X_train_student)
             s_gen_val = get_student_targets(tmp_teacher, gen, X_val_student)
 
@@ -137,14 +137,14 @@ def run_training(
             )
 
         for model in [teacher, cicada_v1, cicada_v2]:
-            log = pd.read_csv(f"saved_models/{model.name}/training.log")
+            log = pd.read_csv(f"models/{model.name}/training.log")
             draw.plot_loss_history(
                 log["loss"], log["val_loss"], f"{model.name}-training-history"
             )
 
-    teacher = keras.models.load_model("saved_models/teacher")
-    cicada_v1 = keras.models.load_model("saved_models/cicada-v1")
-    cicada_v2 = keras.models.load_model("saved_models/cicada-v2")
+    teacher = keras.models.load_model("models/teacher")
+    cicada_v1 = keras.models.load_model("models/cicada-v1")
+    cicada_v2 = keras.models.load_model("models/cicada-v2")
 
     # Comparison between original and reconstructed inputs
     X_example = X_test[:1]
@@ -240,7 +240,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
         action=IsValidFile,
         type=Path,
         help="Path to the config file",
-        default="config.yml",
+        default="misc/config.yml",
     )
     parser.add_argument(
         "--evaluate-only",
@@ -257,7 +257,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training(config, args.evaluate_only, verbose=args.verbose)
+    run_training(config, args.evaluate_only, verbose=args.verbose, epochs=1)
 
 
 if __name__ == "__main__":

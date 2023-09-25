@@ -12,7 +12,7 @@ import yaml
 
 from tensorflow import keras
 from tensorflow.keras import layers, models
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.callbacks import ModelCheckpoint
 
 from generator import RegionETGenerator
 from models import SupervisedModel
@@ -49,8 +49,6 @@ def supervised_training(background, signal, name, epochs, verbose):
         shuffle=True,
         validation_split=0.2,
         callbacks=[
-            EarlyStopping(monitor="val_loss", patience=64, verbose=True, mode="auto"),
-            ReduceLROnPlateau(monitor="val_loss", factor=0.7, patience=5),
             ModelCheckpoint(
                 f"models/{name}.h5",
                 monitor="val_loss",
@@ -80,9 +78,9 @@ def gaussian_kernel(size, length=3, sigma=0.5, min_pu=20, max_pu=100):
 
 def run_training_and_evaluation(
     config: dict,
-    train_size: int = 30000,
-    test_size: int = 30000,
-    epochs: int = 1000,
+    train_size: int = 32000,
+    test_size: int = 32000,
+    epochs: int = 100,
     verbose: bool = False,
 ) -> None:
     draw = Draw()
@@ -94,7 +92,7 @@ def run_training_and_evaluation(
 
     bgr_train, _, bgr_test = gen.get_data_split(datasets)
     bgr_train = bgr_train[:train_size]
-    bgr_test = bgr_test[:test_size]
+    bgr_test = bgr_test[:test_size*5]
     X_signals, _ = gen.get_benchmark(config["signal"], filter_acceptance=False)
 
     config, blend = dict(), []
@@ -111,8 +109,8 @@ def run_training_and_evaluation(
     )
     config["Synthetic"] = [synthetic_train, synthetic_test]
     config["Blend"] = [np.vstack(blend), None]
-    for name, signal_dataset in config.items():
-        supervised_training(bgr_train, signal_dataset[0], name, epochs, verbose=verbose)
+    for name, signal in config.items():
+        supervised_training(bgr_train, signal[0], name, epochs, verbose=verbose)
     cicada_v1 = from_pretrained_keras("cicada-project/cicada-v1.1")
     cicada_v2 = from_pretrained_keras("cicada-project/cicada-v2.1")
 
@@ -127,7 +125,7 @@ def run_training_and_evaluation(
     matrix_eff_3hz = np.zeros((6, 10))
     matrix_eff_1hz = np.zeros((6, 10))
 
-    for x_idx, (signal) in enumerate(list(config.values())[:-1]):
+    for x_idx, signal in enumerate(list(config.values())[:-1]):
         X_test = np.expand_dims(np.append(bgr_test, signal[1], axis=0), axis=-1)
         y_test = np.append(np.zeros(len(bgr_test)), np.ones(len(signal[1])), axis=0)
         for y_idx, (name, signal) in enumerate(config.items()):
@@ -199,7 +197,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training_and_evaluation(config, verbose=args.verbose)
+    run_training_and_evaluation(config, verbose=args.verbose, epochs=1, test_size=1000)
 
 
 if __name__ == "__main__":

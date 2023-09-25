@@ -108,7 +108,7 @@ class CicadaV2:
 
 
 class SupervisedModel:
-    def __init__(self, input_shape: tuple, name: str):
+    def __init__(self, input_shape: tuple, name: str = "supervised"):
         self.input_shape = input_shape
         self.name = name
 
