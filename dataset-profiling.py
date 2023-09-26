@@ -8,11 +8,11 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from drawing import Draw
 from generator import RegionETGenerator
 from pathlib import Path
-from drawing import Draw
-from utils import IsValidFile
 from typing import List, Optional
+from utils import IsValidFile
 
 
 def dataset_profiling(datasets: dict, prefix: str) -> None:

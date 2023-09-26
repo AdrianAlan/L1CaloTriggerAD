@@ -1,11 +1,11 @@
+import hls4ml
 import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 import numpy.typing as npt
-import hls4ml
 
-from matplotlib.patches import Patch
 from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold

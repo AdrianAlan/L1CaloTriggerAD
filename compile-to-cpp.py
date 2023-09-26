@@ -6,21 +6,20 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import argparse
 import glob
 import h5py
+import hls4ml
 import numpy as np
 import tensorflow as tf
 import yaml
-import hls4ml
 
 from drawing import Draw
-from generator import RegionETGenerator
-from pathlib import Path
 from hls4ml.model.layers import Activation as ActivationHLS
 from hls4ml.model.optimizer import OptimizerPass, register_pass
 from huggingface_hub import from_pretrained_keras
+from generator import RegionETGenerator
+from pathlib import Path
 from sklearn.metrics import roc_curve, auc
-from qkeras import *
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+from qkeras import *
 
 
 class EliminateLinearActivationCustom(OptimizerPass):

@@ -6,25 +6,23 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import argparse
 import numpy as np
 import numpy.typing as npt
-import tensorflow as tf
 import qkeras
+import tensorflow as tf
 import yaml
 
-from tensorflow import keras
-from tensorflow.keras import layers, models
-from keras.callbacks import ModelCheckpoint
-
-from generator import RegionETGenerator
-from models import SupervisedModel
 from drawing import Draw
-from utils import IsValidFile
-
 from huggingface_hub import from_pretrained_keras
+from generator import RegionETGenerator
+from keras.callbacks import ModelCheckpoint
+from models import SupervisedModel
+from pathlib import Path
 from scipy import interpolate
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import train_test_split
-from pathlib import Path
+from tensorflow import keras
+from tensorflow.keras import layers, models
 from typing import List, Optional, TypedDict
+from utils import IsValidFile
 
 
 def supervised_training(background, signal, name, epochs, verbose):
@@ -92,7 +90,7 @@ def run_training_and_evaluation(
 
     bgr_train, _, bgr_test = gen.get_data_split(datasets)
     bgr_train = bgr_train[:train_size]
-    bgr_test = bgr_test[:test_size*5]
+    bgr_test = bgr_test[: test_size * 5]
     X_signals, _ = gen.get_benchmark(config["signal"], filter_acceptance=False)
 
     config, blend = dict(), []

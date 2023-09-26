@@ -1,16 +1,15 @@
-import os
-
 import argparse
 import awkward as ak
 import h5py
 import numpy as np
+import os
 import uproot
 
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 from skimage.measure import block_reduce
-from utils import IsReadableDir
 from typing import List, Optional
+from utils import IsReadableDir
 
 
 @dataclass

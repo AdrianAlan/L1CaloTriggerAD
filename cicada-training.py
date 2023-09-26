@@ -7,24 +7,22 @@ import argparse
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import tensorflow as tf
 import qkeras
+import tensorflow as tf
 import yaml
 
+from drawing import Draw
+from generator import RegionETGenerator
+from models import TeacherAutoencoder, CicadaV1, CicadaV2
 from pathlib import Path
 from tensorflow import keras
 from tensorflow.keras import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger
 from tensorflow.keras.optimizers import Adam
-from qkeras import *
 from typing import List, Optional, TypedDict
-
-from generator import RegionETGenerator
-from models import TeacherAutoencoder, CicadaV1, CicadaV2
-from drawing import Draw
 from utils import IsValidFile
 
-tf.get_logger().setLevel("ERROR")
+from qkeras import *
 
 
 def loss(y_true: npt.NDArray, y_pred: npt.NDArray) -> npt.NDArray:
