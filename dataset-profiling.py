@@ -41,7 +41,9 @@ def pprint_acceptance(datasets: dict) -> None:
 
 
 def parse_arguments() -> dict:
-    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
+    parser = argparse.ArgumentParser(
+        description="""Profile training and evaluation datasets"""
+    )
     parser.add_argument(
         "--config",
         "-c",

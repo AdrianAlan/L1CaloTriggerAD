@@ -129,38 +129,35 @@ def convert(
                     h5f_out.create_dataset("AcceptanceFlag", data=fs[s:e])
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
+def parse_arguments() -> dict:
     parser = argparse.ArgumentParser(
-        """Converts CMS Calorimeter Layer-1 Trigger with UCTRegions data from
+        description="""Converts CMS Calorimeter Layer-1 Trigger with UCTRegions data from
            ROOT format to HDF5"""
     )
-
     parser.add_argument(
         "filepath", action=IsReadableDir, help="Input ROOT directory", type=Path
     )
-
     parser.add_argument("savepath", help="Output HDF5 files prefix", type=Path)
-
     parser.add_argument(
         "--calotree",
         help="Data tree",
         default="l1CaloTowerEmuTree/L1CaloTowerTree/L1CaloTower",
         type=str,
     )
-
     parser.add_argument(
         "--acceptance",
         help="Store acceptance flag",
         default="l1GeneratorTree/L1GenTree/Generator",
         type=str,
     )
-
     parser.add_argument(
         "--split", action="store_true", help="Split the dataset 60:20:20"
     )
+    return parser.parse_args()
 
-    args = parser.parse_args(args_in)
 
+def main(args_in: Optional[List[str]] = None) -> None:
+    args = parse_arguments()
     convert(args.filepath, args.savepath, args.calotree, args.acceptance, args.split)
 
 

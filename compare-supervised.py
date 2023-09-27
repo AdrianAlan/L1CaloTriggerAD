@@ -76,9 +76,9 @@ def gaussian_kernel(size, length=3, sigma=0.5, min_pu=20, max_pu=100):
 
 def run_training_and_evaluation(
     config: dict,
+    epochs: int = 100,
     train_size: int = 32000,
     test_size: int = 32000,
-    epochs: int = 100,
     verbose: bool = False,
 ) -> None:
     draw = Draw()
@@ -176,15 +176,36 @@ def run_training_and_evaluation(
     draw.plot_results_supervised(matrix_eff_1hz, "Efficiency 1kHz", models, datasets)
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
-    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
+def parse_arguments() -> dict:
+    parser = argparse.ArgumentParser(
+        description="""Train a set of supervised models and compare them with CICADA"""
+    )
     parser.add_argument(
-        "-c",
         "--config",
+        "-c",
         action=IsValidFile,
         type=Path,
-        help="Path to the config file",
         default="misc/config.yml",
+        help="Path to config file",
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        help="Number of training epochs",
+        default=100,
+    )
+    parser.add_argument(
+        "--train-size",
+        type=int,
+        help="Number of train samples from each dataset",
+        default=32000,
+    )
+    parser.add_argument(
+        "--test-size",
+        type=int,
+        help="Number of test samples from each dataset",
+        default=32000,
     )
     parser.add_argument(
         "-v",
@@ -195,7 +216,18 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training_and_evaluation(config, verbose=args.verbose, epochs=1, test_size=1000)
+    return args, config
+
+
+def main(args_in: Optional[List[str]] = None) -> None:
+    args, config = parse_arguments()
+    run_training_and_evaluation(
+        config,
+        epochs=args.epochs,
+        train_size=args.train_size,
+        test_size=args.test_size,
+        verbose=args.verbose,
+    )
 
 
 if __name__ == "__main__":

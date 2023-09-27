@@ -230,21 +230,28 @@ def run_training(
     draw.plot_roc_curve(y_true, y_pred_cicada_v2, [*X_signal], inputs, "roc-cicada-v2")
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
-    parser = argparse.ArgumentParser("""Profile training and evaluation datasets""")
+def parse_arguments() -> dict:
+    parser = argparse.ArgumentParser(description="""CICADA training scripts""")
     parser.add_argument(
-        "-c",
         "--config",
+        "-c",
         action=IsValidFile,
         type=Path,
-        help="Path to the config file",
         default="misc/config.yml",
+        help="Path to config file",
     )
     parser.add_argument(
         "--evaluate-only",
         action="store_true",
         help="Skip training",
         default=False,
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        help="Number of training epochs",
+        default=100,
     )
     parser.add_argument(
         "-v",
@@ -255,7 +262,12 @@ def main(args_in: Optional[List[str]] = None) -> None:
     )
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config))
-    run_training(config, args.evaluate_only, verbose=args.verbose, epochs=1)
+    return args, config
+
+
+def main(args_in: Optional[List[str]] = None) -> None:
+    args, config = parse_arguments()
+    run_training(config, args.evaluate_only, epochs=args.epochs, verbose=args.verbose)
 
 
 if __name__ == "__main__":

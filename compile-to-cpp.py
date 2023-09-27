@@ -105,21 +105,30 @@ def testing(keras_model, hls_model, dataset_signals, dataset_background, version
     draw.plot_output_reference()
 
 
-def load_configuration():
-    parser = argparse.ArgumentParser(description="Convert QKeras model to hls4ml model")
-    parser.add_argument("--config", "-d", type=Path, help="Path to config")
-    parser.add_argument("--version", "-v", type=str, help="CICADA version")
-    args = parser.parse_args()
-    config = yaml.safe_load(open(args.config))
-    return config, args.version
-
-
 def cleanup():
     for f in glob.glob("*.tar.gz"):
         os.remove(f)
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="""Convert QKeras model to hls4ml model"""
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        action=IsValidFile,
+        type=Path,
+        default="misc/config.yml",
+        help="Path to config file",
+    )
+    parser.add_argument("-v", "--version", type=str, help="CICADA version")
+    args = parser.parse_args()
+    return yaml.safe_load(open(args.config)), args.version
+
+
 def main():
+    args = parse_arguments()
     config, version = load_configuration()
 
     # Workaround for linear activation layer removal
