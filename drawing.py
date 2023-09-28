@@ -6,6 +6,7 @@ import numpy.typing as npt
 
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
+from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
@@ -13,7 +14,7 @@ from typing import List
 
 
 class Draw:
-    def __init__(self, output_dir: Path = "plots"):
+    def __init__(self, output_dir: Path = Path("plots")):
         self.output_dir = output_dir
         self.cmap = ["green", "red", "blue", "orange", "purple", "brown"]
         hep.style.use("CMS")
@@ -23,8 +24,7 @@ class Draw:
 
     def plot_loss_history(
         self, training_loss: npt.NDArray, validation_loss: npt.NDArray, name: str
-    ) -> None:
-        plt.figure(figsize=(15, 10))
+    ):
         plt.plot(np.arange(1, len(training_loss) + 1), training_loss, label="Training")
         plt.plot(
             np.arange(1, len(validation_loss) + 1), validation_loss, label="Validation"
@@ -37,16 +37,22 @@ class Draw:
         )
         plt.close()
 
-    def plot_regional_deposits(
-        self, deposits: npt.NDArray, mean: float, name: str
-    ) -> None:
+    def plot_regional_deposits(self, deposits: npt.NDArray, mean: float, name: str):
         im = plt.imshow(
             deposits.reshape(18, 14), vmin=0, vmax=deposits.max(), cmap="Purples"
         )
         ax = plt.gca()
         cbar = ax.figure.colorbar(im, ax=ax)
-        cbar.ax.set_ylabel(r"E$_T$ (GeV)")  # , rotation=-90, va="bottom")
-        plt.axis("off")
+        cbar.ax.set_ylabel(r"Calorimeter E$_T$ deposit (GeV)")
+        plt.xticks(np.arange(14), labels=np.arange(4, 18))
+        plt.yticks(
+            np.arange(18),
+            labels=np.arange(18)[::-1],
+            rotation=90,
+            va="center",
+        )
+        plt.xlabel(r"i$\eta$")
+        plt.ylabel(r"i$\phi$")
         plt.title(rf"Mean E$_T$ {mean: .2f} ({name})")
         plt.savefig(
             f"{self.output_dir}/profiling-mean-deposits-{self._parse_name(name)}.png",
@@ -56,7 +62,7 @@ class Draw:
 
     def plot_spacial_deposits_distribution(
         self, deposits: List[npt.NDArray], labels: List[str], name: str
-    ) -> None:
+    ):
         ax1 = plt.subplot(121)
         ax2 = plt.subplot(122)
         for deposit, label in zip(deposits, labels):
@@ -90,7 +96,7 @@ class Draw:
 
     def plot_deposits_distribution(
         self, deposits: List[npt.NDArray], labels: List[str], name: str
-    ) -> None:
+    ):
         for deposit, label in zip(deposits, labels):
             plt.hist(
                 deposit.reshape((-1)),
@@ -115,31 +121,32 @@ class Draw:
         deposits_out: npt.NDArray,
         loss: float,
         name: str,
-    ) -> None:
-        fig, ax = plt.subplots(figsize=(17, 17))
-
+    ):
+        fig, (ax1, ax2, ax3, cax) = plt.subplots(
+            ncols=4, figsize=(15, 10), gridspec_kw={"width_ratios": [1, 1, 1, 0.05]}
+        )
         max_deposit = max(deposits_in.max(), deposits_out.max())
 
-        ax1 = plt.subplot(3, 3, 1)
+        ax1 = plt.subplot(1, 4, 1)
         ax1.get_xaxis().set_visible(False)
         ax1.get_yaxis().set_visible(False)
-        ax1.set_title("Original")
+        ax1.set_title("Original", fontsize=18)
         ax1.imshow(
             deposits_in.reshape(18, 14), vmin=0, vmax=max_deposit, cmap="Purples"
         )
 
-        ax2 = plt.subplot(3, 3, 2)
+        ax2 = plt.subplot(1, 4, 2)
         ax2.get_xaxis().set_visible(False)
         ax2.get_yaxis().set_visible(False)
-        ax2.set_title("Reconstructed")
+        ax2.set_title("Reconstructed", fontsize=18)
         ax2.imshow(
             deposits_out.reshape(18, 14), vmin=0, vmax=max_deposit, cmap="Purples"
         )
 
-        ax3 = plt.subplot(3, 3, 3)
+        ax3 = plt.subplot(1, 4, 3)
         ax3.get_xaxis().set_visible(False)
         ax3.get_yaxis().set_visible(False)
-        ax3.set_title(f"Absolute Difference, MSE: {loss: .2f}")
+        ax3.set_title(rf"|$\Delta$|, MSE: {loss: .2f}", fontsize=18)
 
         im = ax3.imshow(
             np.abs(deposits_in - deposits_out).reshape(18, 14),
@@ -147,8 +154,12 @@ class Draw:
             vmax=max_deposit,
             cmap="Purples",
         )
-        cbar = ax3.figure.colorbar(im, ax=ax3)
-        cbar.ax.set_ylabel(r"E$_T$ (GeV)", rotation=-90, va="bottom")
+
+        ip = InsetPosition(ax3, [1.05, 0, 0.05, 1])
+        cax.set_axes_locator(ip)
+        fig.colorbar(im, cax=cax, ax=[ax1, ax2, ax3]).set_label(
+            label=r"Calorimeter E$_T$ deposit (GeV)", fontsize=18
+        )
 
         plt.savefig(
             f"{self.output_dir}/{self._parse_name(name)}.png", bbox_inches="tight"
@@ -157,8 +168,7 @@ class Draw:
 
     def plot_anomaly_score_distribution(
         self, scores: List[npt.NDArray], labels: List[str], name: str
-    ) -> None:
-        plt.figure(figsize=(15, 10))
+    ):
         for score, label in zip(scores, labels):
             plt.hist(
                 score.reshape((-1)),
@@ -170,7 +180,7 @@ class Draw:
                 histtype="step",
             )
         plt.xlabel(r"Anomaly Score")
-        plt.legend(loc="best")
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         plt.savefig(
             f"{self.output_dir}/{self._parse_name(name)}.png", bbox_inches="tight"
         )
@@ -184,8 +194,7 @@ class Draw:
         inputs: List[npt.NDArray],
         name: str,
         cv: int = 3,
-    ) -> None:
-        plt.figure(figsize=(8, 8))
+    ):
         skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
         for y_true, y_pred, label, color, d in zip(
             y_trues, y_preds, labels, self.cmap, inputs
@@ -228,40 +237,43 @@ class Draw:
             color="black",
             label="3 kHz",
         )
-        plt.xlim([0.0001, 28.61])
+        plt.xlim([0.0002861, 28.61])
         plt.ylim([0.01, 1.0])
         plt.xscale("log")
         plt.yscale("log")
-        plt.xlabel("Trigger Rate (MHz)", size=15)
-        plt.ylabel("Signal Efficiency", size=15)
-        plt.legend(loc="best")
+        plt.xlabel("Trigger Rate (MHz)")
+        plt.ylabel("Signal Efficiency")
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         plt.savefig(
             f"{self.output_dir}/{self._parse_name(name)}.png", bbox_inches="tight"
         )
         plt.close()
 
-    def plot_compilation_error(self, scores_keras, scores_hls4ml, name):
-        plt.figure(figsize=(8, 8))
+    def plot_compilation_error(
+        self, scores_keras: npt.NDArray, scores_hls4ml: npt.NDArray, name: str
+    ):
         plt.scatter(scores_keras, np.abs(scores_keras - scores_hls4ml), s=1)
-        plt.xlabel("Anomaly Score, $S$", fontsize=18)
-        plt.ylabel("Error, $|S_{Keras} - S_{hls4ml}|$", fontsize=18)
+        plt.xlabel("Anomaly Score, $S$")
+        plt.ylabel("Error, $|S_{Keras} - S_{hls4ml}|$")
         plt.savefig(
             f"{self.output_dir}/compilation-error-{self._parse_name(name)}.png",
             bbox_inches="tight",
         )
         plt.close()
 
-    def plot_compilation_error_distribution(self, scores_keras, scores_hls4ml, name):
+    def plot_compilation_error_distribution(
+        self, scores_keras: npt.NDArray, scores_hls4ml: npt.NDArray, name: str
+    ):
         plt.hist(scores_keras - scores_hls4ml, fc="none", histtype="step", bins=100)
-        plt.xlabel("Error, $S_{Keras} - S_{hls4ml}$", fontsize=18)
-        plt.ylabel("Number of samples", fontsize=18)
+        plt.xlabel("Error, $S_{Keras} - S_{hls4ml}$")
+        plt.ylabel("Number of samples")
         plt.yscale("log")
         plt.savefig(
             f"{self.output_dir}/compilation-error-dist-{self._parse_name(name)}.png",
             bbox_inches="tight",
         )
 
-    def plot_cpp_model(self, hls_model, name):
+    def plot_cpp_model(self, hls_model, name: str):
         hls4ml.utils.plot_model(
             hls_model,
             show_shapes=True,
@@ -269,8 +281,11 @@ class Draw:
             to_file=f"{self.output_dir}/cpp-model-{self._parse_name(name)}.png",
         )
 
-    def plot_roc_curve_comparison(self, scores_keras, scores_hls4ml, name):
-        fpr_model, tpr_model = [], []
+    def plot_roc_curve_comparison(
+        self, scores_keras: dict, scores_hls4ml: npt.NDArray, name: str
+    ):
+        fpr_model: list = []
+        tpr_model: list = []
 
         scores_keras_normal = scores_keras["Background"]
         scores_hls4ml_normal = scores_hls4ml["Background"]
@@ -312,7 +327,7 @@ class Draw:
         plt.yscale("log")
         plt.xlabel("Trigger Rate (MHz)")
         plt.ylabel("Signal Efficiency")
-        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         plt.savefig(
             f"{self.output_dir}/compilation-roc-{self._parse_name(name)}.png",
             bbox_inches="tight",
@@ -372,8 +387,10 @@ class Draw:
         )
         plt.close()
 
-    def plot_results_supervised(self, matrix, name, models, datasets):
-        plt.imshow(matrix, alpha=0.7, cmap="RdYlGn")
+    def plot_results_supervised(
+        self, grid: npt.NDArray, models: list[str], datasets: list[str], name: str
+    ):
+        plt.imshow(grid, alpha=0.7, cmap="RdYlGn")
         plt.xticks(
             np.arange(len(models)),
             labels=models,
@@ -387,7 +404,7 @@ class Draw:
                 text = plt.text(
                     j,
                     i,
-                    "{0:.3f}".format(matrix[i, j]),
+                    "{0:.3f}".format(grid[i, j]),
                     ha="center",
                     va="center",
                     color="black",

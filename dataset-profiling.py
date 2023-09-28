@@ -11,7 +11,7 @@ import yaml
 from drawing import Draw
 from generator import RegionETGenerator
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from utils import IsValidFile
 
 
@@ -56,7 +56,7 @@ def parse_arguments() -> dict:
     return yaml.safe_load(open(args.config))
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
+def main(args_in=None) -> None:
     config = parse_arguments()
     dataset_profiling(config["background"], "Background")
     dataset_profiling(config["signal"], "Signal")

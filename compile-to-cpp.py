@@ -18,6 +18,7 @@ from huggingface_hub import from_pretrained_keras
 from generator import RegionETGenerator
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
+from utils import IsValidFile
 
 from qkeras import *
 
@@ -127,9 +128,8 @@ def parse_arguments():
     return yaml.safe_load(open(args.config)), args.version
 
 
-def main():
-    args = parse_arguments()
-    config, version = load_configuration()
+def main(args_in=None) -> None:
+    config, version = parse_arguments()
 
     # Workaround for linear activation layer removal
     hls4ml.model.flow.flow.update_flow(

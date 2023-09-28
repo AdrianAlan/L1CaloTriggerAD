@@ -170,13 +170,13 @@ def run_training_and_evaluation(
         matrix_eff_3hz[x_idx][9] = interpolated(0.003)
         matrix_eff_1hz[x_idx][9] = interpolated(0.001)
 
-    draw.plot_results_supervised(matrix_auc, "ROC AUC", models, datasets)
-    draw.plot_results_supervised(matrix_eff_5hz, "Efficiency 5kHz", models, datasets)
-    draw.plot_results_supervised(matrix_eff_3hz, "Efficiency 3kHz", models, datasets)
-    draw.plot_results_supervised(matrix_eff_1hz, "Efficiency 1kHz", models, datasets)
+    draw.plot_results_supervised(matrix_auc, models, datasets, "ROC AUC")
+    draw.plot_results_supervised(matrix_eff_5hz, models, datasets, "Efficiency 5kHz")
+    draw.plot_results_supervised(matrix_eff_3hz, models, datasets, "Efficiency 3kHz")
+    draw.plot_results_supervised(matrix_eff_1hz, models, datasets, "Efficiency 1kHz")
 
 
-def parse_arguments() -> dict:
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description="""Train a set of supervised models and compare them with CICADA"""
     )

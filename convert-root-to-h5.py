@@ -2,13 +2,14 @@ import argparse
 import awkward as ak
 import h5py
 import numpy as np
+import numpy.typing as npt
 import os
 import uproot
 
 from dataclasses import dataclass
 from pathlib import Path
 from skimage.measure import block_reduce
-from typing import List, Optional
+from typing import List
 from utils import IsReadableDir
 
 
@@ -59,14 +60,14 @@ class DataSource:
         return self.size
 
 
-def absoluteFilePaths(directory, extension="root"):
+def absoluteFilePaths(directory: Path, extension: str = "root"):
     for dirpath, _, filenames in os.walk(directory):
         for f in filenames:
             if f.endswith(extension):
                 yield os.path.abspath(os.path.join(dirpath, f))
 
 
-def get_split(events: int, split: np.array = np.array([0.6, 0.2, 0.2])):
+def get_split(events: int, split: npt.NDArray = np.array([0.6, 0.2, 0.2])):
     split = np.array(split)
     cumsum = np.cumsum(events * split).astype(int)
     cumsum = np.insert(cumsum, 0, 0)
@@ -75,7 +76,7 @@ def get_split(events: int, split: np.array = np.array([0.6, 0.2, 0.2])):
 
 def convert(
     input_dir: Path, save_path: Path, calo_tree: str, acceptance_tree: str, split: bool
-) -> None:
+):
     create = True
     for in_ in absoluteFilePaths(input_dir):
         print("Processing {}".format(in_.split("/")[-1]))
@@ -129,7 +130,7 @@ def convert(
                     h5f_out.create_dataset("AcceptanceFlag", data=fs[s:e])
 
 
-def parse_arguments() -> dict:
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description="""Converts CMS Calorimeter Layer-1 Trigger with UCTRegions data from
            ROOT format to HDF5"""
@@ -156,8 +157,8 @@ def parse_arguments() -> dict:
     return parser.parse_args()
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
-    args = parse_arguments()
+def main(args_in=None) -> None:
+    args, config = parse_arguments()
     convert(args.filepath, args.savepath, args.calotree, args.acceptance, args.split)
 
 

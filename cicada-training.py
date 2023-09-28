@@ -15,11 +15,12 @@ from drawing import Draw
 from generator import RegionETGenerator
 from models import TeacherAutoencoder, CicadaV1, CicadaV2
 from pathlib import Path
+from tensorflow import data
 from tensorflow import keras
 from tensorflow.keras import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger
 from tensorflow.keras.optimizers import Adam
-from typing import List, Optional, TypedDict
+from typing import List
 from utils import IsValidFile
 
 from qkeras import *
@@ -39,7 +40,9 @@ def quantize(arr: npt.NDArray, precision: tuple = (16, 8)) -> npt.NDArray:
     return arrc
 
 
-def get_student_targets(teacher: Model, gen: RegionETGenerator, X: np.array) -> None:
+def get_student_targets(
+    teacher: Model, gen: RegionETGenerator, X: npt.NDArray
+) -> data.Dataset:
     X_hat = teacher.predict(X, batch_size=512, verbose=0)
     y = loss(X, X_hat)
     y = quantize(np.log(y) * 32)
@@ -230,7 +233,7 @@ def run_training(
     draw.plot_roc_curve(y_true, y_pred_cicada_v2, [*X_signal], inputs, "roc-cicada-v2")
 
 
-def parse_arguments() -> dict:
+def parse_arguments():
     parser = argparse.ArgumentParser(description="""CICADA training scripts""")
     parser.add_argument(
         "--config",
@@ -265,7 +268,7 @@ def parse_arguments() -> dict:
     return args, config
 
 
-def main(args_in: Optional[List[str]] = None) -> None:
+def main(args_in=None) -> None:
     args, config = parse_arguments()
     run_training(config, args.evaluate_only, epochs=args.epochs, verbose=args.verbose)
 

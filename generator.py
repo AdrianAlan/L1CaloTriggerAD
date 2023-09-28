@@ -57,7 +57,7 @@ class RegionETGenerator:
 
     def get_benchmark(
         self, datasets: dict, filter_acceptance=True
-    ) -> (dict[str, npt.NDArray], dict[str, float]):
+    ) -> Tuple[dict, list]:
         signals = {}
         acceptance = []
         for dataset in datasets:
